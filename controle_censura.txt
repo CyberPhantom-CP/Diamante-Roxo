@@ -1,0 +1,8 @@
+# SISTEMA DE CENSURAS
+# ====================================================================
+# REGRAS: ("True/False > INICIO (HH:MM:SS) > FIM (HH:MM:SS) > CENSURA, TARJA").
+# SEPARADOR: Usa (;) para colocar mais do que uma censura na mesma linha.
+# ====================================================================
+
+# ==== Bloco de Censuras ====
+False | 

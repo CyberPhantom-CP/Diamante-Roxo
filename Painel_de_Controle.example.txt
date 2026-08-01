@@ -1,0 +1,65 @@
+=================================================================
+                 PAINEL DE CONTROLE — Diamante Roxo
+=================================================================
+
+==================== TRAVA DE SEGURANCA =========================
+
+# yes, sim ou true — trava de seguranca para impedir execucao acidental.
+# Qualquer outro valor (no, nao, false, vazio) bloqueia o sistema.
+executar_sistema = no
+
+======================== MODO DE OPERACAO ========================
+
+# live (transmitir), gravar/record/gravação (gravar local) ou teste
+modo_sistema   = live
+
+# twitch (todos os apps) ou kick (so OBS + Streamer.bot)
+plataforma     = kick
+
+# filmes, rerun ou estudo
+modo_conteudo  = filmes
+
+# filmes ou rerun (destino do iniciar_midias quando modo=estudo)
+modo_destino   = filmes
+
+# final ou rerun (cena apos alerta RAID)
+modo_raid      = final
+
+# final, raid (modo rerun) ou start (reseta fluxo)
+saida_rerun    = final
+
+rerun_dias          = 1
+rerun_horario_final = 23:59:59
+
+# yes, sim ou true — corta filmes apos 23h para nao passar do horario
+oraculo_ativado = nao
+
+# Pausa por quantidade de filmes (0 = desativado). Ex: 2 = pausa apos o 2o filme
+pausa_apos_filmes = 0
+
+# Horario de retorno da pausa por quantidade (usado com pausa_apos_filmes)
+pausa_retorno     = 18:45:00
+
+# Horario de retorno da pausa noturna (oraculo, 23h)
+oraculo_retorno   = 05:00:00
+
+======================= CONEXAO DO OBS ==========================
+
+obs_host     = 127.0.0.1
+obs_port     = 4455
+obs_password = SUA_SENHA_AQUI
+
+========================= AGENDAMENTOS ===========================
+
+# == Software ==
+mixitup           = 12:30:00
+streamerbot       = 12:35:00
+chatty            = 12:40:00
+obs64studio       = 12:50:00
+minimizar_janelas = 13:10:00
+
+# == Sistema ==
+conectar_obs    = 18:40:00
+start_sistema   = 18:40:51
+retornar_midias = 05:00:00
+iniciar_midias  = 05:00:00    # so usado se modo=estudo

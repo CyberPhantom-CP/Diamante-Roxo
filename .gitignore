@@ -1,0 +1,10 @@
+# Logs das sessões
+Script/relatorio_*.log
+relatorio_*.log
+
+# Config com dados de execução (mantém o padrão limpo no repo)
+Painel_de_Controle.txt
+
+# Arquivos temporários do Windows
+Thumbs.db
+desktop.ini
