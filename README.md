@@ -52,6 +52,9 @@ Diamante-Roxo\
 ├── README.md                        → este arquivo
 ├── Script\
 │   └── Diamante Roxo.py             → script principal
+├── Utilitarios\
+│   ├── gerar_tempo.py               → extrai durações dos vídeos (gera tempo_duracao.txt)
+│   └── Gerar_Censuras.py            → captura cenas a censurar (gera controle_censura.txt)
 ├── DOCUMENTACAO_COMPLETA.md         → documentação técnica detalhada
 ├── JORNADA_DIAMANTE_ROXO.md         → histórico da jornada de desenvolvimento
 ├── Painel_de_Controle.example.txt   → modelo de configuração
