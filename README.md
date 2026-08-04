@@ -1,4 +1,8 @@
-# Diamante Roxo
+# 💎 Diamante Roxo
+
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v4.13-7b2cbf)
+![Python](https://img.shields.io/badge/Python-3.x-7b2cbf)
+![Status](https://img.shields.io/badge/status-em%20uso-7b2cbf)
 
 Sistema de automação para transmissão ao vivo (lives), gerenciando cenas, áudio, alertas e transições no **OBS Studio**.
 
