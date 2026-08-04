@@ -8,3 +8,7 @@ Painel_de_Controle.txt
 # Arquivos temporários do Windows
 Thumbs.db
 desktop.ini
+
+# Compilados Python (cache gerado ao executar)
+__pycache__/
+*.pyc
