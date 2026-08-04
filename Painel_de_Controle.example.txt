@@ -2,6 +2,10 @@
                  PAINEL DE CONTROLE — Diamante Roxo
 =================================================================
 
+# ATENCAO: os horarios abaixo estao em 00:00:00 (valor neutro/placeholder).
+# Ajuste para SEUS horarios antes de usar — 00:00:00 = meia-noite
+# (todos os agendamentos disparariam juntos a meia-noite).
+
 ==================== TRAVA DE SEGURANCA =========================
 
 # yes, sim ou true — trava de seguranca para impedir execucao acidental.
@@ -29,7 +33,7 @@ modo_raid      = final
 saida_rerun    = final
 
 rerun_dias          = 1
-rerun_horario_final = 23:59:59
+rerun_horario_final = 00:00:00
 
 # yes, sim ou true — corta filmes apos 23h para nao passar do horario
 oraculo_ativado = nao
@@ -38,10 +42,10 @@ oraculo_ativado = nao
 pausa_apos_filmes = 0
 
 # Horario de retorno da pausa por quantidade (usado com pausa_apos_filmes)
-pausa_retorno     = 18:45:00
+pausa_retorno     = 00:00:00
 
 # Horario de retorno da pausa noturna (oraculo, 23h)
-oraculo_retorno   = 05:00:00
+oraculo_retorno   = 00:00:00
 
 ======================= CONEXAO DO OBS ==========================
 
@@ -52,14 +56,14 @@ obs_password = SUA_SENHA_AQUI
 ========================= AGENDAMENTOS ===========================
 
 # == Software ==
-mixitup           = 12:30:00
-streamerbot       = 12:35:00
-chatty            = 12:40:00
-obs64studio       = 12:50:00
-minimizar_janelas = 13:10:00
+mixitup           = 00:00:00
+streamerbot       = 00:00:00
+chatty            = 00:00:00
+obs64studio       = 00:00:00
+minimizar_janelas = 00:00:00
 
 # == Sistema ==
-conectar_obs    = 18:40:00
-start_sistema   = 18:40:51
-retornar_midias = 05:00:00
-iniciar_midias  = 05:00:00    # so usado se modo=estudo
+conectar_obs    = 00:00:00
+start_sistema   = 00:00:00
+retornar_midias = 00:00:00
+iniciar_midias  = 00:00:00    # so usado se modo=estudo
