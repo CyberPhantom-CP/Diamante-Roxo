@@ -1,7 +1,7 @@
-# 💎 Diamante Roxo
+﻿# Diamante Roxo
 
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v4.13-7b2cbf)
-![Python](https://img.shields.io/badge/Python-3.x-7b2cbf)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v5.0-7b2cbf)
+![Python](https://img.shields.io/badge/Python-3.14-7b2cbf)
 ![Status](https://img.shields.io/badge/status-em%20uso-7b2cbf)
 
 Sistema de automação para transmissão ao vivo (lives), gerenciando cenas, áudio, alertas e transições no **OBS Studio**.
@@ -40,12 +40,14 @@ Projeto pessoal de uso contínuo em lives reais. Configuração 100% por arquivo
 - **Ducking de áudio durante alertas**: reduz o volume das fontes e restaura com fade suave, sem picos
 - **Sistema de censura por trecho** (`controle_censura.txt`): liga/desliga fontes nos horários exatos do filme
 - **Pulos pós-créditos**: avança automaticamente trechos desnecessários
-- **Oráculo de horário**: corta a reprodução antes das 23h para não estourar o limite
+- **Oráculo de horário**: pausa noturna (23h-06h) com retorno em horário configurado
 - **Pausa por quantidade** de filmes, com retorno automático
+- **Retornos independentes** para pausa noturna e pausa por quantidade
 - **Detecção de queda de stream**: pausa o filme e retoma após 3s de estabilidade
 - **Fontes de texto dinâmicas** no OBS (ID LIVE, SESSÃO ID)
 - **Log diário** completo de todas as ações
 - Ajuste automático de prioridade do processo
+- Transmissão **direta** para a Kick (sem relay FFmpeg)
 
 ---
 
@@ -68,21 +70,24 @@ Diamante-Roxo\
 └── .gitignore
 ```
 
+> **Na pasta de trabalho (Códigos):** usa-se `Painel_de_Controle.txt` (cópia ativa do `.example`), que não é versionado.
+
 ## Como rodar
 
-1. Copie o `Painel_de_Controle.example.txt` para `Painel_de_Controle.txt` (na raiz do projeto)
-2. Preencha seus horários, modo e conexão do OBS
+1. Configure o `Painel_de_Controle.txt` (na raiz do projeto) com seus horários, modo e conexão do OBS
+2. Configure a transmissão da Kick **diretamente no OBS** (Ferramentas → Configurações → Transmissão)
 3. Defina `executar_sistema = yes` (senão o sistema se recusa a iniciar)
 4. Execute o `Diamante Roxo.py` (ou o `.bat`)
 
-> ⚠ **Aviso de segurança:** este sistema depende de uma configuração muito específica do OBS (cenas, fontes, coleções com nomes exatos). Sem o OBS idêntico ao original, o sistema **não funciona** — e sem o painel correto, a trava de segurança bloqueia a inicialização de propósito. Este é um projeto pessoal, não um produto distribuível.
+> **Aviso de segurança:** este sistema depende de uma configuração muito específica do OBS (cenas, fontes, coleções com nomes exatos). Sem o OBS idêntico ao original, o sistema **não funciona** — e sem o painel correto, a trava de segurança bloqueia a inicialização de propósito. Este é um projeto pessoal, não um produto distribuível.
 
 ## Requisitos
 
 - Windows (utiliza `pywinauto`, `psutil` e `schedule`)
-- Python 3.8+
-- OBS Studio com WebSocket habilitado (porta 4455)
+- Python 3.14 (testado nesta versão; códigos 3.10+ funcionam)
+- OBS Studio com WebSocket habilitado (porta [PORTA])
 - Streamer.bot / Mix It Up / Chatty (conforme a plataforma)
+- Conexão de rede estável para transmitir direto na Kick
 
 ## Licença
 

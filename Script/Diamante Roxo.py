@@ -1,6 +1,6 @@
 # ====================================================================
 # ====================================================================
-# Diamante Roxo v4.13
+# Diamante Roxo v5.0
 # ====================================================================
 # Sistema de automação para transmissão ao vivo
 # Gerencia cenas, áudio, alertas e transições no OBS Studio
@@ -23,7 +23,7 @@
 # ====================================================================
 # Autor   : CyberPhantom (C.P.)
 # Criado  : 24/03/2026
-# Revisão : 15/07/2026
+# Revisão : 31/08/2026
 # ====================================================================
 
 # 1) Importação de Módulos e Configuração Inicial.
@@ -213,11 +213,11 @@ def localizar_software(nome_exe):
                                                         nivel3 = os.path.join(sub2.path, nome_exe)
                                                         if os.path.exists(nivel3):
                                                             return nivel3
-                                            except:
+                                            except Exception:
                                                 pass
-                            except:
+                            except Exception:
                                 pass
-            except:
+            except Exception:
                 pass
         return None
 
@@ -245,7 +245,7 @@ def verificar_app_start(nome_processo):
         try:
             if nome_processo.lower() in proc.info['name'].lower():
                 return True
-        except:
+        except Exception:
             pass
     return False
 
@@ -309,28 +309,28 @@ def minimizar_janelas():
     try:
         Desktop(backend="uia").window(title_re="^OBS.*", visible_only=True).minimize()
         log("OBS Studio minimizado.")
-    except:
+    except Exception:
         pass
 
     # === Streamer.bot ===
     try:
         Desktop(backend="uia").window(title_re="^Streamer.bot.*", visible_only=True).minimize()
         log("Streamer.bot minimizado.")
-    except:
+    except Exception:
         pass
 
     # === Mix It Up ===
     try:
         Desktop(backend="uia").window(title_re="^Mix It Up.*", visible_only=True).minimize()
         log("Mix It Up minimizado.")
-    except:
+    except Exception:
         pass
 
     # === Chatty ===
     try:
         Desktop(backend="uia").window(title_re=".*Chatty.*", visible_only=True).minimize()
         log("Janela do Chatty minimizada.")
-    except:
+    except Exception:
         pass
 
 # 4) Interno do OBS Studio.
@@ -414,6 +414,11 @@ class GrampeadoOBS(EventClient):
         self._trans_lock = threading.Lock()
         self._trans_seq = 0
 
+        # volumes_originais é lido/escrito pela thread de eventos do OBS e por
+        # threads de threading.Timer ao mesmo tempo. self._trans_lock já protegia
+        # self.transicao — este lock faz o mesmo pro "cofre" de volumes.
+        self._vol_lock = threading.Lock()
+
         self.fontes_por_cena = {
             "INÍCIO": ["MÚSICAS"],
             "MÍDIAS": ["SPOTIFY"],
@@ -453,7 +458,7 @@ class GrampeadoOBS(EventClient):
 
         # Se existe um alerta em andamento, tratamos a transição por estado
         if self.resgate_em_andamento:
-            log(f"Alerta ativo durante a transição! Iniciando fluxo de transição controlada...")
+            log("Alerta ativo durante a transição! Iniciando fluxo de transição controlada...")
 
             with self._trans_lock:
                 # Se já houver uma transição em andamento diferente, cancela-a
@@ -466,11 +471,13 @@ class GrampeadoOBS(EventClient):
                     self._iniciar_transicao_locked(prev_cena, nova_cena, fontes_antigas, fontes_novas, global_modo_conteudo)
 
             for fonte in fontes_antigas:
-                if fonte not in fontes_novas and fonte in self.volumes_originais:
-                    vol_orig = self.volumes_originais.pop(fonte)
-                    threading.Thread(target=self.executar_efeito_fade, args=(fonte, 0.0001, vol_orig, 2), daemon=True).start()
-                    print()
-                    log(f"[TRANSIÇÃO] Fonte '{fonte}' saiu de cena. Restaurando volume...")
+                if fonte not in fontes_novas:
+                    with self._vol_lock:
+                        vol_orig = self.volumes_originais.pop(fonte, None)
+                    if vol_orig is not None:
+                        threading.Thread(target=self.executar_efeito_fade, args=(fonte, 0.0001, vol_orig, 2), daemon=True).start()
+                        print()
+                        log(f"[TRANSIÇÃO] Fonte '{fonte}' saiu de cena. Restaurando volume...")
 
             # Aplica as ações imediatas da transição (sem finalizar o alerta aqui)
             try:
@@ -548,13 +555,14 @@ class GrampeadoOBS(EventClient):
                 try:
                     status_vol = client.get_input_volume(nome_fonte)
                     
-                    if nome_fonte not in self.volumes_originais:
-                        if hasattr(status_vol, 'input_volume_db'):
-                            db_atual = status_vol.input_volume_db
-                            self.volumes_originais[nome_fonte] = 10 ** (db_atual / 20.0)
-                        else:
-                            self.volumes_originais[nome_fonte] = 1.0
-                            log(f"[AVISO] Não foi possível obter volume em dB da fonte '{nome_fonte}'. Usando padrão 1.0")
+                    with self._vol_lock:
+                        if nome_fonte not in self.volumes_originais:
+                            if hasattr(status_vol, 'input_volume_db'):
+                                db_atual = status_vol.input_volume_db
+                                self.volumes_originais[nome_fonte] = 10 ** (db_atual / 20.0)
+                            else:
+                                self.volumes_originais[nome_fonte] = 1.0
+                                log(f"[AVISO] Não foi possível obter volume em dB da fonte '{nome_fonte}'. Usando padrão 1.0")
                     
                     sucesso = ajustar_volume_seguro(nome_fonte, 0.031622)
                     
@@ -579,15 +587,18 @@ class GrampeadoOBS(EventClient):
 
         # 1⃣ COFRE DE VOLUMES (Proteção máxima contra TypeError)
         try:
-            # Verifica se o cofre existe, se é um dicionário válido e se não está vazio
-            if hasattr(self, 'volumes_originais') and isinstance(self.volumes_originais, dict) and len(self.volumes_originais) > 0:
-                # Transforma em lista segura para evitar crash durante o loop
-                for fonte, vol_original in list(self.volumes_originais.items()):
+            # Captura e limpa o cofre como uma operação só, protegida por lock —
+            # finalizar_resgate_com_seguranca roda tanto pela thread de eventos do
+            # OBS quanto disparada por threading.Timer, então sem lock dava pra
+            # perder ou duplicar uma entrada se as duas caíssem ao mesmo tempo.
+            with self._vol_lock:
+                itens_para_restaurar = list(self.volumes_originais.items())
+                self.volumes_originais.clear()
+
+            if itens_para_restaurar:
+                for fonte, vol_original in itens_para_restaurar:
                     log(f"Alerta concluído! Iniciando Fade-In para '{fonte}' voltando ao volume original...")
                     threading.Thread(target=self.executar_efeito_fade, args=(fonte, 0.031622, vol_original, 2), daemon=True).start()
-                
-                # Limpa o cofre para o próximo alerta
-                self.volumes_originais.clear()
             else:
                 log("Nenhum volume de áudio pendente no cofre para restaurar.")
         except Exception as e:
@@ -623,7 +634,7 @@ class GrampeadoOBS(EventClient):
             if not ajustar_volume_seguro(nome_fonte, volume_atual_mul):
                 tentativas_falhadas += 1
                 if tentativas_falhadas >= 3:
-                    log(f"[FADE] Abortando fade após 3 falhas consecutivas")
+                    log("[FADE] Abortando fade após 3 falhas consecutivas")
                     break
         
         # Último chute para garantir o volume exato do final do fade
@@ -675,13 +686,15 @@ class GrampeadoOBS(EventClient):
         fontes_entraram = [f for f in fontes_novas if f not in fontes_antigas]
         for fonte in fontes_entraram:
             try:
-                if fonte not in self.volumes_originais:
-                    try:
-                        vol = client.get_input_volume(fonte).input_volume_mul
-                        self.volumes_originais[fonte] = vol
-                    except Exception:
-                        self.volumes_originais[fonte] = 1.0
-                threading.Thread(target=self.executar_efeito_fade, args=(fonte, self.volumes_originais.get(fonte, 1.0), 0.0001, 2), daemon=True).start()
+                with self._vol_lock:
+                    if fonte not in self.volumes_originais:
+                        try:
+                            vol = client.get_input_volume(fonte).input_volume_mul
+                            self.volumes_originais[fonte] = vol
+                        except Exception:
+                            self.volumes_originais[fonte] = 1.0
+                    vol_partida = self.volumes_originais.get(fonte, 1.0)
+                threading.Thread(target=self.executar_efeito_fade, args=(fonte, vol_partida, 0.0001, 2), daemon=True).start()
                 log(f"[TRANSIÇÃO] Modo RERUN: iniciado fade-out de '{fonte}' (nova na cena).")
             except Exception as e:
                 log(f"[TRANSIÇÃO] Falha ao aplicar fade-out em '{fonte}': {e}")
@@ -806,7 +819,7 @@ def pausar_filme_se_rodando():
             if cena == "MÍDIAS":
                 client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
                 log("[GRAMPEADO] Filme pausado.")
-        except:
+        except Exception:
             pass
 
 
@@ -817,7 +830,7 @@ def retomar_filme_se_pausado():
             if cena == "MÍDIAS":
                 client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
                 log("[GRAMPEADO] Filme retomado.")
-        except:
+        except Exception:
             pass
 
 
@@ -965,7 +978,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 if decorrido_total > 0 and decorrido < decorrido_total - 5:
                     try:
                         client.set_media_input_cursor(nome_fonte, int(decorrido_total * 1000))
-                    except:
+                    except Exception:
                         pass
                     decorrido = decorrido_total
 
@@ -1060,7 +1073,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     midia_decorrido_global = decorrido
                 resultado_final = "pular"
                 break
-        except:
+        except Exception:
             pass
         
         # 1.0s entre deteccoes: metade das chamadas ao OBS por hora de filme,
@@ -1078,7 +1091,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             if censura["ativo_agora"] and censura["fonte"] not in fontes_proximas:
                 try:
                     visibilidade_fonte(cena_esperada, censura["fonte"], False)
-                except:
+                except Exception:
                     pass
                     
     return resultado_final
@@ -1411,18 +1424,19 @@ def aba_pausa(modo="oraculo"):
         nonlocal proximo_retorno
         retorno_str = "05:00:00"
         if os.path.exists(painel_geral):
-            for linha in open(painel_geral, "r", encoding="utf-8"):
-                if linha.strip().startswith(chave_retorno):
-                    partes = linha.split("=", 1)
-                    if len(partes) == 2:
-                        retorno_str = partes[1].strip()
-                        break
+            with open(painel_geral, "r", encoding="utf-8") as f:
+                for linha in f:
+                    if linha.strip().startswith(chave_retorno):
+                        partes = linha.split("=", 1)
+                        if len(partes) == 2:
+                            retorno_str = partes[1].strip()
+                            break
         try:
             h_r, m_r, s_r = map(int, retorno_str.split(":"))
             proximo_retorno = datetime.now().replace(hour=h_r, minute=m_r, second=s_r, microsecond=0)
             if proximo_retorno <= datetime.now():
                 proximo_retorno += timedelta(days=1)
-        except:
+        except Exception:
             proximo_retorno = None
 
     _recalcular_retorno()
@@ -1445,13 +1459,13 @@ def aba_pausa(modo="oraculo"):
             if mod_atual != ultima_mod_pausa:
                 ultima_mod_pausa = mod_atual
                 _recalcular_retorno()
-        except:
+        except Exception:
             pass
 
         # == Auto-retorno por horário agendado ==
         if proximo_retorno and datetime.now() >= proximo_retorno:
             print()
-            log(f"Horário de retorno atingido. Saindo da PAUSA.")
+            log("Horário de retorno atingido. Saindo da PAUSA.")
             trocar_cena("MÍDIAS")
             time.sleep(0.5)
             # Busca o cursor salvo antes de reproduzir, pra evitar que o OBS reinicie do início
@@ -1526,7 +1540,7 @@ def horario_de_rerun():
         if segundos_totais is not None and segundos_totais > 0:
             agora_atual = datetime.now()
             if momento_final and momento_final <= agora_atual:
-                print(f"\n[OK] Tempo limite do RERUN atingido com sucesso.")
+                print("\n[OK] Tempo limite do RERUN atingido com sucesso.")
                 return "finalizar"
         
         # Verificação de troca de cena manual no OBS
@@ -1534,7 +1548,7 @@ def horario_de_rerun():
             cena_atual = cena_ativa_obs()
             if cena_atual != "MÍDIAS":
                 return "pular"
-        except:
+        except Exception:
             pass
 
         # ⏳ CRONÔMETRO REGRESSIVO EM TEMPO REAL
@@ -1613,6 +1627,42 @@ def aba_final():
         return
     stop_sistema()
 
+def _travar_painel_seguranca():
+    """Reescreve o Painel de Controle: executar_sistema -> no, pausa_apos_filmes -> 0.
+    Compartilhada entre stop_sistema() e _ao_parar() (antes era código duplicado).
+
+    CORREÇÃO 1: a versão antiga fazia conteudo.replace("executar_sistema = yes", ...),
+    que só bate se o valor original for exatamente "yes" com um espaço de cada lado.
+    Como a leitura da trava aceita "sim"/"true" e qualquer espaçamento/maiúscula,
+    quem usasse "sim" ou "true" via o log dizer "trava ativada" sem a trava ter sido
+    reescrita de verdade. Agora procura a linha pela CHAVE (como já era feito pra
+    pausa_apos_filmes), não pelo texto exato do valor.
+    CORREÇÃO 2: stop_sistema() chamava isso sem try/except (só _ao_parar() tinha).
+    Se o arquivo estivesse bloqueado/ausente nesse instante, a thread do fluxo de
+    cenas morria calada. Agora as duas chamam esta função, que já tem o try/except.
+    """
+    try:
+        if not os.path.exists(painel_geral):
+            return
+        with open(painel_geral, "r", encoding="utf-8") as f:
+            linhas = f.readlines()
+
+        for idx, linha in enumerate(linhas):
+            chave = linha.split("=", 1)[0].strip() if "=" in linha else ""
+            if chave == "executar_sistema":
+                linhas[idx] = f"executar_sistema = no{linha[len(linha.rstrip()):]}"
+            elif linha.strip().startswith("pausa_apos_filmes"):
+                linhas[idx] = f"pausa_apos_filmes = 0{linha[len(linha.rstrip()):]}"
+
+        with open(painel_geral, "w", encoding="utf-8") as f:
+            f.writelines(linhas)
+
+        log("[SEGURANCA] executar_sistema reescrito para 'no' no Painel de Controle.")
+        log("[SEGURANCA] pausa_apos_filmes reescrito para 0 no Painel de Controle.")
+    except Exception as e:
+        log(f"[SEGURANCA] Erro ao travar painel: {e}")
+
+
 def stop_sistema():
     global encerrar_sistema, sistema_em_andamento, global_modo_sistema, _stopping_stream, global_pausa_apos_filmes
 
@@ -1626,27 +1676,18 @@ def stop_sistema():
             client.stop_stream()
             print()
             log("Transmissão encerrada!")
-        _stopping_stream = False
     except Exception as e:
         log(f"Erro ao parar transmissão/gravação: {e}")
+    finally:
+        # CORREÇÃO: antes só zerava em caso de sucesso. Se stop_stream()/stop_record()
+        # falhasse, _stopping_stream ficava travado em True pro resto da sessão e
+        # on_output_state_changed() nunca mais detectava queda de stream de verdade.
+        _stopping_stream = False
     trocar_cena("ENTRADA")
 
     time.sleep(5)
 
-
-
-    with open(painel_geral, "r", encoding="utf-8") as f:
-        conteudo = f.read()
-    conteudo = conteudo.replace("executar_sistema = yes", "executar_sistema = no")
-    linhas = conteudo.splitlines(True)
-    for idx, linha in enumerate(linhas):
-        if linha.strip().startswith("pausa_apos_filmes"):
-            linhas[idx] = f"pausa_apos_filmes = 0{linha[len(linha.rstrip()):]}"
-            break
-    with open(painel_geral, "w", encoding="utf-8") as f:
-        f.writelines(linhas)
-    log("Trava de segurança ativada: executar_sistema = no")
-    log("pausa_apos_filmes reescrito para 0 no Painel de Controle.")
+    _travar_painel_seguranca()
 
     global_pausa_apos_filmes = 0
     sistema_em_andamento = False
@@ -1723,23 +1764,33 @@ def verificar_agendamento():
         global_oraculo_retorno = config.get("oraculo_retorno", "05:00:00")
 
         # == Programas & Minimização (selecionados por plataforma) ==
+        # CORREÇÃO: campo vazio no painel usava "00:00:00" como padrão e agendava
+        # a ação pra meia-noite. Agora só agenda se o horário estiver preenchido
+        # (mesma checagem que iniciar_midias já fazia, aplicada aqui também).
         if global_plataforma in ("twitch",):
-            schedule.every().day.at(config.get("mixitup", "00:00:00")).do(start_mixitup)
-            schedule.every().day.at(config.get("chatty", "00:00:00")).do(start_chatty)
-        schedule.every().day.at(config.get("streamerbot", "00:00:00")).do(start_streamerbot)
-        schedule.every().day.at(config.get("obs64studio", "00:00:00")).do(start_obs64studio)
-        schedule.every().day.at(config.get("minimizar_janelas", "00:00:00")).do(minimizar_janelas)
+            if config.get("mixitup", ""):
+                schedule.every().day.at(config.get("mixitup")).do(start_mixitup)
+            if config.get("chatty", ""):
+                schedule.every().day.at(config.get("chatty")).do(start_chatty)
+        if config.get("streamerbot", ""):
+            schedule.every().day.at(config.get("streamerbot")).do(start_streamerbot)
+        if config.get("obs64studio", ""):
+            schedule.every().day.at(config.get("obs64studio")).do(start_obs64studio)
+        if config.get("minimizar_janelas", ""):
+            schedule.every().day.at(config.get("minimizar_janelas")).do(minimizar_janelas)
 
         # == Conexão ==
-        schedule.every().day.at(config.get("conectar_obs", "00:00:00")).do(conectar_obs)
+        if config.get("conectar_obs", ""):
+            schedule.every().day.at(config.get("conectar_obs")).do(conectar_obs)
 
         # == Iniciando o Sistema ==
         if global_modo_conteudo == "estudo":
             if config.get("iniciar_midias", ""):
                 schedule.every().day.at(config.get("iniciar_midias")).do(iniciar_midias_direto)
-        else:
-            schedule.every().day.at(config.get("start_sistema", "00:00:00")).do(start_sistema)
-        schedule.every().day.at(config.get("retornar_midias", "00:00:00")).do(auto_retorno_midias)
+        elif config.get("start_sistema", ""):
+            schedule.every().day.at(config.get("start_sistema")).do(start_sistema)
+        if config.get("retornar_midias", ""):
+            schedule.every().day.at(config.get("retornar_midias")).do(auto_retorno_midias)
         log("Tarefas e dados de conexão agendados com sucesso.")
 
     except Exception as e:
@@ -1757,10 +1808,11 @@ def _ao_parar():
             _stopping_stream = True
             client.stop_stream()
             client.stop_record()
-            _stopping_stream = False
             log("[SISTEMA] Transmissao encerrada.")
     except Exception:
         pass
+    finally:
+        _stopping_stream = False
     try:
         if event_client:
             event_client.disconnect()
@@ -1768,29 +1820,13 @@ def _ao_parar():
     except Exception:
         pass
 
-
-    try:
-        if os.path.exists(painel_geral):
-            with open(painel_geral, "r", encoding="utf-8") as f:
-                conteudo = f.read()
-            conteudo = conteudo.replace("executar_sistema = yes", "executar_sistema = no")
-            linhas = conteudo.splitlines(True)
-            for idx, linha in enumerate(linhas):
-                if linha.strip().startswith("pausa_apos_filmes"):
-                    linhas[idx] = f"pausa_apos_filmes = 0{linha[len(linha.rstrip()):]}"
-                    break
-            with open(painel_geral, "w", encoding="utf-8") as f:
-                f.writelines(linhas)
-            log("[SEGURANCA] executar_sistema reescrito para 'no' no Painel de Controle.")
-            log("[SEGURANCA] pausa_apos_filmes reescrito para 0 no Painel de Controle.")
-    except Exception as e:
-        log(f"[SEGURANCA] Erro ao travar painel: {e}")
+    _travar_painel_seguranca()
 
     log("[SISTEMA] Diamante Roxo encerrado. Todas as conexoes foram limpas.")
 
 atexit.register(_ao_parar)
 
-def _sinal_parar(s, f):
+def _sinal_parar(_s, _f):
     sys.exit(0)
 
 signal.signal(signal.SIGINT, _sinal_parar)

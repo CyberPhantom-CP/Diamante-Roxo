@@ -1,4 +1,4 @@
-# Diamante Roxo v4.10 — Documentação Completa
+﻿# Diamante Roxo v5.0 — Documentação Completa
 
 Sistema de automação para transmissão ao vivo baseado em OBS Studio.
 Gerencia cenas, áudio, alertas e transições de forma autônoma.
@@ -24,7 +24,7 @@ Gerencia cenas, áudio, alertas e transições de forma autônoma.
 
 ## 1. Visão Geral
 
-**Nome:** Diamante Roxo v4.7  
+**Nome:** Diamante Roxo v5.0  
 **Autor:** CyberPhantom (C.P.)  
 **Função:** Automatizar transmissões ao vivo gerenciando OBS Studio, Streamer.bot, Mix It Up e Chatty.
 
@@ -76,13 +76,13 @@ Painel_de_Controle.txt  (configuração)
                     │
                     ▼
               Você inicia OBS + transmissão manual
-              cena MÍDIAS com EV BRADESCO + WORD_VS
+              cena MÍDIAS com [SITE] + [ANOTACOES]
                     │
                     ▼ (agendado: iniciar_midias)
               iniciar_midias_direto()
                     │
                     ▼
-              Desliga EV BRADESCO + WORD_VS
+              Desliga [SITE] + [ANOTACOES]
               Liga FILMES/GIF/SESSÃO ID (ou RERUN)
                     │
               ┌─────┴─────┐
@@ -93,7 +93,7 @@ Painel_de_Controle.txt  (configuração)
 
 Durante todo o ciclo, o **GrampeadoOBS** (EventClient) escuta eventos do OBS em segundo plano:
 - **on_current_program_scene_changed:** detecta troca manual de cena.
-- **on_input_volume_meters:** monitora volume do MSG_PIX para detectar alertas.
+- **on_input_volume_meters:** monitora volume do [FONTE_ALERTA] para detectar alertas.
 - **on_input_mute_state_changed:** trata mutar/desmutar do mixer.
 
 ---
@@ -116,19 +116,26 @@ O arquivo `Painel_de_Controle.txt` define horários para cada ação:
 | `plataforma` | `twitch` (todos) ou `kick` (só OBS + Streamer.bot) | - |
 | `mixitup` | Inicia Mix It Up | Só Twitch |
 | `streamerbot` | Inicia Streamer.bot | Ambas |
-| `obs64studio` | Inicia OBS Studio | Ambas |
+| `[OBS_SCHED]` | Inicia OBS Studio | Ambas |
 | `chatty` | Inicia Chatty | Só Twitch |
 | `minimizar_janelas` | Minimiza todos os apps | - |
 | `conectar_obs` | Conecta ao OBS WebSocket | - |
 | `start_sistema` | Inicia transmissão/gravação | - |
 | `retornar_midias` | Retorna de PAUSA para MÍDIAS | - |
+| `iniciar_midias` | Dispara transição de estudo (só modo=estudo) | - |
+| `oraculo_ativado` | Habilita/desabilita pausa noturna 23h-06h | - |
+| `pausa_apos_filmes` | Pausa após N filmes (0 = desativado) | - |
+| `pausa_retorno` | Horário de retorno da pausa por quantidade | - |
+| `oraculo_retorno` | Horário de retorno da pausa noturna | - |
 
 O scheduler verifica o arquivo a cada 5 segundos. Se houver alteração, recarrega tudo.
+
+> **Nota:** desde a v5.0, os campos de horário em branco no painel **não são agendados** (antes um campo vazio virava `00:00:00` e agendava a ação para a meia-noite). Um horário só é agendado se o campo estiver preenchido.
 
 ### 3.3. Cenas (Sequência)
 
 ```
-ENTRADA (9s) → INÍCIO (7min05s) → MÍDIAS (loop filmes) → PAUSA (noturna, opcional)
+ENTRADA (9s) → INÍCIO (7min05s) → MÍDIAS (loop filmes) → PAUSA (noturna ou por quantidade, opcional)
                                   → RERUN (contagem regressiva)
                                   → RAIDA (11min10s) → FINAL (5min10s) → ENCERRAMENTO
 ```
@@ -150,7 +157,25 @@ Controlado por `modo_conteudo = filmes` no painel.
   - Detecta **skip manual** do usuário (avanço > 15s).
   - Executa **saltos pós-créditos** automáticos configurados no `tempo_duracao.txt`.
   - Verifica **pausa noturna** (23h às 6h) entre filmes.
+  - Verifica **pausa por quantidade** (`pausa_apos_filmes`) — detecta 30s antes do fim e pausa após o enésimo filme.
 - Ao final de todos os filmes, avança para RAIDA.
+
+**Pausa por Quantidade de Filmes:**
+Quando `pausa_apos_filmes > 0` no painel, o sistema pausa a reprodução depois que determinada quantidade de filmes termina:
+- Detecta **30s antes do fim** do filme de índice igual a `pausa_apos_filmes` (mesma antecipação do oráculo).
+- Grava a posição atual (`midia_decorrido_global`) para retomada futura.
+- Transita para a cena **PAUSA** com modo `quantidade` (chama `aba_pausa("quantidade")`).
+- Retoma automaticamente no horário de `pausa_retorno`, usando `set_media_input_cursor` para voltar à posição salva antes do PLAY (evita recomeçar do início).
+
+**Pausa Oráculo vs. Pausa por Quantidade:**
+São dois retornos independentes, configurados separadamente no painel:
+
+| Config | Modo de pausa | Onde é definido o retorno |
+|---|---|---|
+| `oraculo_ativado = yes` | Pausa noturna (23h-06h) | `oraculo_retorno` |
+| `pausa_apos_filmes > 0` | Pausa por quantidade | `pausa_retorno` |
+
+O oráculo gera `pausa_oraculo` (barrou o próximo filme no minuto 1) ou `pausa_horario` (já passou das 23h na reta final). A pausa por quantidade gera `pausa_quantidade`. Cada um tem seu próprio horário de retorno e sua própria função de retomada (`oraculo_retorno` / `pausa_retorno`), eliminando a antiga confusão entre os dois fluxos.
 
 **Controle de visibilidade das fontes na cena MÍDIAS:**
 
@@ -162,14 +187,14 @@ Controlado por `modo_conteudo = filmes` no painel.
 | SESSÃO ID | SPOTIFY |
 |  | CENSURA |
 |  | TARJA |
-|  | EV BRADESCO |
-|  | WORD_VS |
+|  | [SITE] |
+|  | [ANOTACOES] |
 
 ### 4.2. Modo RERUN
 
 Controlado por `modo_conteudo = rerun` no painel.
 
-- Apenas fontes RERUN, SPOTIFY e STREAMER OFF ficam visíveis. EV BRADESCO e WORD_VS são desligadas.
+- Apenas fontes RERUN, SPOTIFY e STREAMER OFF ficam visíveis. [SITE] e [ANOTACOES] são desligadas.
 - Exibe contagem regressiva ao vivo até o horário configurado em `rerun_horario_final`.
 - Detecta alterações em tempo real nos parâmetros do painel (dias, horário).
 - Ao finalizar, redireciona conforme `saida_rerun`:
@@ -182,12 +207,12 @@ Controlado por `modo_conteudo = rerun` no painel.
 Controlado por `modo_conteudo = estudo` no painel.
 
 - Fluxo híbrido para dias de estudo presencial:
-  - Você abre OBS + transmissão manualmente (cena MÍDIAS com fontes EV BRADESCO e WORD_VS visíveis).
+  - Você abre OBS + transmissão manualmente (cena MÍDIAS com fontes [SITE] e [ANOTACOES] visíveis).
   - `conectar_obs` conecta o WebSocket no horário agendado.
   - `start_sistema` é **ignorado** — não força ENTRADA/INÍCIO.
   - `iniciar_midias` (agendado separadamente) dispara a transição:
     1. Garante que a cena MÍDIAS está ativa.
-    2. Desliga EV BRADESCO e WORD_VS.
+    2. Desliga [SITE] e [ANOTACOES].
     3. Liga FILMES + GIF + SESSÃO ID (ou RERUN + SPOTIFY).
     4. Inicia o loop normal de filmes/rerun.
 - Em dias sem estudo, basta mudar para `modo_conteudo = filmes` ou `rerun` — `iniciar_midias` é ignorado, `start_sistema` funciona normalmente.
@@ -198,7 +223,7 @@ Controlado por `modo_conteudo = estudo` no painel.
 
 ### 5.1. Detecção
 
-A classe `GrampeadoOBS` monitora o volume de `MSG_PIX` (definido em `fontes_alertas`).
+A classe `GrampeadoOBS` monitora o volume de `[FONTE_ALERTA]` (definido em `fontes_alertas`).
 Quando o volume ultrapassa o limite `0.00316` (cerca de -50dB), o alerta é disparado.
 
 ### 5.2. Ducking (Redução de Áudio)
@@ -220,18 +245,18 @@ Quando um alerta é detectado:
 | MÍDIAS | SPOTIFY |
 | PAUSA | SPOTIFY |
 
-A fonte `MSG_PIX` (definida em `fontes_alertas`) é automaticamente excluída do ducking mesmo se listada em `fontes_por_cena`.
+A fonte `[FONTE_ALERTA]` (definida em `fontes_alertas`) é automaticamente excluída do ducking mesmo se listada em `fontes_por_cena`.
 
 ### 5.3. Timer de Retorno
 
-Quando o volume do `MSG_PIX` volta ao normal:
+Quando o volume do `[FONTE_ALERTA]` volta ao normal:
 - Um timer de **3 segundos** é iniciado.
 - Se outro alerta chegar antes do timer finalizar, o timer é **cancelado e reiniciado**.
 - Se o timer completar 3 segundos, o sistema restaura todos os volumes com **fade-in de 2 segundos** em 8 passos.
 
 ### 5.4. Tratamento de Mixer Mutado
 
-Se o usuário mutar o mixer do `MSG_PIX` no OBS:
+Se o usuário mutar o mixer do `[FONTE_ALERTA]` no OBS:
 - O sistema para imediatamente o resgate.
 - Restaura todos os volumes.
 - Quando desmutar, reativa os sensores.
@@ -302,12 +327,16 @@ modo_raid             = final / rerun    # Destino após RAID
 saida_rerun           = final / raid / reset
 rerun_dias            = 1                # Dias para encerramento RERUN
 rerun_horario_final   = 23:59:59         # Horário alvo do RERUN
-obs_host              = 192.168.1.x      # IP do OBS
-obs_port              = 4455             # Porta WebSocket
-obs_password          = ****             # Senha WebSocket
+oraculo_ativado       = yes / nao        # Habilita pausa noturna 23h-06h (yes/sim/true)
+pausa_apos_filmes     = 0                # Pausa após N filmes (0 = desativado)
+pausa_retorno         = HH:MM:SS         # Retorno da pausa por quantidade
+oraculo_retorno       = HH:MM:SS         # Retorno da pausa noturna
+[OBS_HOST]              = [HOST]        # IP do OBS
+[OBS_PORT]              = [PORTA]             # Porta WebSocket
+[OBS_SENHA]          = [SENHA]             # Senha WebSocket
 mixitup               = HH:MM:SS         # Horário para iniciar
 streamerbot           = HH:MM:SS
-obs64studio           = HH:MM:SS
+[OBS_SCHED]           = HH:MM:SS
 chatty                = HH:MM:SS
 minimizar_janelas     = HH:MM:SS
 conectar_obs          = HH:MM:SS
@@ -361,7 +390,7 @@ Gerado automaticamente na pasta `Script` com timestamps:
 | `verificar_app_start(nome)` | Checa se processo está rodando |
 | `start_mixitup()` | Inicia Mix It Up (localização dinâmica + subprocess.Popen) |
 | `start_streamerbot()` | Inicia Streamer.bot (localização dinâmica + subprocess.Popen) |
-| `start_obs64studio()` | Inicia OBS Studio (localização dinâmica + subprocess.Popen) |
+| `start_[OBS_SCHED]()` | Inicia OBS Studio (localização dinâmica + subprocess.Popen) |
 | `start_chatty()` | Inicia Chatty (localização dinâmica + subprocess.Popen) |
 | `minimizar_janelas()` | Minimiza todos os 4 apps via pywinauto |
 
@@ -391,7 +420,7 @@ Gerado automaticamente na pasta `Script` com timestamps:
 | `aba_inicio()` | Cena inicial (7min05s) → MÍDIAS ou RERUN |
 | `aba_midias()` | Loop de filmes com censura + skip |
 | `aba_rerun()` | Retransmissão com contagem regressiva |
-| `aba_pausa()` | Pausa noturna até troca manual |
+| `aba_pausa(modo)` | Pausa até troca manual — `modo` define o retorno: `"quantidade"` (usa `pausa_retorno`) ou default/`"oraculo"` (usa `oraculo_retorno`). Na retomada, refaz o seek para a posição salva antes do PLAY |
 | `aba_raid()` | Cena de raide (11min10s) |
 | `aba_final()` | Cena final (5min10s) → encerramento |
 | `aba_geral()` | Ponto de entrada do thread (fluxo normal) |
@@ -416,9 +445,10 @@ Gerado automaticamente na pasta `Script` com timestamps:
 | `start_sistema()` | Conecta OBS + inicia stream/record |
 | `iniciar_fluxo()` | Marca ID LIVE + dispara aba_geral em thread |
 | `resetar_fluxo()` | Reinicia o fluxo |
-| `stop_sistema()` | Para stream/record + encerra |
+| `stop_sistema()` | Para stream/record + encerra (usa `_travar_painel_seguranca`) |
 | `verificar_agendamento()` | Monitora Painel_de_Controle.txt + agenda tarefas (condiciona `iniciar_midias` / `start_sistema` conforme `modo_conteudo`) |
 | `auto_retorno_midias()` | Retorno automático da PAUSA |
+| `_travar_painel_seguranca()` | Reescreve `executar_sistema = no` + `pausa_apos_filmes = 0` no painel (compartilhada entre `stop_sistema` e `_ao_parar`) |
 
 ---
 
@@ -431,15 +461,18 @@ Gerencia toda a resposta a eventos do OBS em tempo real.
 
 | Atributo | Tipo | Descrição |
 |---|---|---|
-| `fontes_alertas` | list | Fontes que disparam alerta (padrão: `["MSG_PIX"]`) |
+| `fontes_alertas` | list | Fontes que disparam alerta (padrão: `["[FONTE_ALERTA]"]`) |
 | `fontes_por_cena` | dict | Mapeamento cena → fontes para ducking |
 | `cena_atual` | str | Cena atual no OBS |
 | `resgate_em_andamento` | bool | True durante alerta ativo |
 | `timer_retorno` | Timer | Timer de 3s para finalizar resgate |
 | `volumes_originais` | dict | Volumes salvos antes do ducking (cofre) |
 | `transicao` | dict | Estado da transição atual (se houver alerta) |
-| `mixer_mutado` | bool | True se MSG_PIX está mutado |
+| `mixer_mutado` | bool | True se [FONTE_ALERTA] está mutado |
 | `_midia_pausada_pelo_alerta` | bool | True se FILMES foi pausado pelo alerta |
+| `_vol_lock` | threading.Lock | Protege o acesso a `volumes_originais` (thread-safety) |
+
+> **Nota (v5.0):** `volumes_originais` (o "cofre") é lido/escrito tanto pela thread de eventos do OBS quanto por threads de `threading.Timer`. O lock `_vol_lock` protege esse dicionário — antes podia perder ou duplicar uma entrada se as duas threads caíssem ao mesmo tempo. `finalizar_resgate_com_seguranca()` agora captura e limpa o cofre numa única operação protegida por lock.
 
 ### 10.2. Event Handlers
 
@@ -447,7 +480,7 @@ Gerencia toda a resposta a eventos do OBS em tempo real.
 |---|---|---|
 | `on_current_program_scene_changed` | Cena trocada | Gerencia transição com alerta |
 | `on_input_volume_meters` | Volume do áudio mudou | Detecta alerta e faz ducking |
-| `on_input_mute_state_changed` | Estado de mute | Trata mutar/desmutar do MSG_PIX |
+| `on_input_mute_state_changed` | Estado de mute | Trata mutar/desmutar do [FONTE_ALERTA] |
 
 ### 10.3. Métodos de Ação
 
@@ -474,7 +507,7 @@ Gerencia toda a resposta a eventos do OBS em tempo real.
 
 ### 11.1. Python (linguagem)
 
-Python 3.10+ instalado e no PATH.
+Python 3.14 instalado e no PATH (testado nesta versão; códigos 3.10+ funcionam).
 
 ### 11.2. Pacotes Python (`pip install`)
 
@@ -489,68 +522,42 @@ pip install schedule psutil pywinauto obsws_python
 | `pywinauto` | Automação de janelas (minimizar aplicativos) |
 | `obsws_python` | Controle do OBS via WebSocket v5 (cenas, fontes, áudio, stream) |
 
-### 11.3. Node.js
-
-Node.js 18+ instalado e no PATH. Usado exclusivamente pelo relay.
-
-### 11.4. Pacote Node.js (`npm install`)
-
-Dentro da pasta `TWITCH/Script/`:
-
-```bash
-npm install node-media-server
-```
-
-| Pacote | Uso |
-|---|---|
-| `node-media-server` | Servidor RTMP local na porta 1936 (OBS → relay → Kick) |
-
-### 11.5. FFmpeg
-
-FFmpeg instalado e no PATH. Usado para:
-- Push do stream local para o Kick (`relay.js`)
-- Teste de conexão com o Kick antes de iniciar (`testar_conexao_kick()`)
-
-### 11.6. Softwares Gerenciados (iniciados pelo script)
+### 11.3. Softwares Gerenciados (iniciados pelo script)
 
 | Software | Executável | Função |
 |---|---|---|
-| **OBS Studio** | `obs64.exe` | Transmissão, gravação, cenas, fontes |
+| **OBS Studio** | `[OBS_EXE]` | Transmissão, gravação, cenas, fontes |
 | **Streamer.bot** | `Streamer.bot.exe` | Eventos, comandos e alertas da live |
 | **Mix It Up** | `MixItUp.exe` | Chat, interatividade e comandos (Twitch) |
 | **Chatty** | `Chatty.exe` | Cliente de chat com moderação (Twitch) |
 
-### 11.7. Arquivos do Projeto (devem estar salvos)
+### 11.4. Arquivos do Projeto (devem estar salvos)
 
 | Arquivo | Pasta | Função |
 |---|---|---|
 | `Diamante Roxo.py` | `TWITCH/Script/` | Script principal |
-| `relay.js` | `TWITCH/Script/` | Relay FFmpeg (Node.js) |
-| `Relay (iniciar).bat` | `TWITCH/` | Atalho para iniciar relay manualmente |
 | `Painel_de_Controle.txt` | `TWITCH/` | Configuração principal |
 | `tempo_duracao.txt` | `TWITCH/` | Durações e saltos dos filmes |
 | `controle_censura.txt` | `TWITCH/` | Regras de censura por filme |
 | `DOCUMENTACAO_COMPLETA.md` | `TWITCH/` | Documentação completa |
 | `JORNADA_DIAMANTE_ROXO.md` | `TWITCH/` | Histórico de versões |
 
-### 11.8. Arquivos Gerados em Execução
+### 11.5. Arquivos Gerados em Execução
 
 | Arquivo | Pasta | Conteúdo |
 |---|---|---|
 | `relatório_<data>.log` | `TWITCH/Script/` | Log da sessão |
-| `relay.log` | `TWITCH/` | Log do relay |
-| `relay_status.json` | `TWITCH/` | Status da conexão do relay |
 
-### 11.9. Configuração OBS
+### 11.6. Configuração OBS
 
 | Arquivo | Caminho | Observação |
 |---|---|---|
-| `basic.ini` | `%APPDATA%/obs-studio/basic/profiles/GERAL/` | Perfil 1280x720, 30 FPS, CBR 4000 |
-| `streamEncoder.json` | `%APPDATA%/obs-studio/basic/profiles/GERAL/` | x264 ultrafast, baseline |
-| `global.ini` | `%APPDATA%/obs-studio/` | BrowserHWAccel=true, ProcessPriority=High |
-| `KS.json` | `%APPDATA%/obs-studio/basic/scenes/` | Cena principal com 15 sources |
+| `[PERFIL]` | `[PASTA_OBS]/[PERFIL_DIR]/` | Perfil 1280x720, 30 FPS, CBR 4000 |
+| `[ENCODER]` | `[PASTA_OBS]/[PERFIL_DIR]/` | x264 ultrafast, baseline |
+| `[GLOBAL]` | `[PASTA_OBS]/` | BrowserHWAccel=true, ProcessPriority=High |
+| `[CENARIOS]` | `[PASTA_OBS]/[CENAS_DIR]/` | Cena principal com 15 sources |
 
-> **Dica:** Backupeie a pasta `%APPDATA%/obs-studio/` inteira. Contém perfil, cenas, fontes, configurações de áudio e encoding.
+> **Dica:** Backupeie a pasta `[PASTA_OBS]/` inteira. Contém perfil, cenas, fontes, configurações de áudio e encoding.
 
 ---
 
@@ -561,7 +568,7 @@ FFmpeg instalado e no PATH. Usado para:
 #### 12.1.1. Instalar Python
 
 1. Acesse https://www.python.org/downloads/
-2. Baixe a versão mais recente (3.12+ ou 3.13+)
+2. Baixe a versão mais recente (3.12+ ou 3.13+; o projeto foi testado em 3.14)
 3. Na instalação, **marque "Add Python to PATH"** (obrigatório)
 4. Clique em "Install Now"
 5. Verifique: abra o Prompt/Terminal e digite:
@@ -575,61 +582,34 @@ FFmpeg instalado e no PATH. Usado para:
 pip install schedule psutil pywinauto obsws_python
 ```
 
-#### 12.1.3. Instalar Node.js
+#### 12.1.3. Configure o OBS Studio
 
-1. Acesse https://nodejs.org/ (baixe a versão LTS)
-2. Execute o instalador — marque todas as opções padrão (inclui PATH automaticamente)
-3. Verifique:
-   ```bash
-   node --version
-   npm --version
-   ```
+- Ative o WebSocket em Ferramentas → WebSocket Server Settings.
+- Porta padrão: [PORTA] (ou configure no Painel de Controle).
+- Senha opcional.
+- Configure a transmissão da Kick diretamente nas settings do OBS (Ferramentas → Configurações → Transmissão).
+  O sistema **não** gerencia relay — o OBS transmite direto para a Kick.
 
-#### 12.1.4. Instalar pacote do relay
+#### 12.1.4. Coloque todos os arquivos do projeto na estrutura correta
 
-Na pasta `TWITCH/Script/`:
-
-```bash
-npm install node-media-server
+```
+TWITCH/
+├── Painel_de_Controle.txt
+├── tempo_duracao.txt
+├── controle_censura.txt
+├── DOCUMENTACAO_COMPLETA.md
+├── Script/
+│   └── Diamante Roxo.py
+│   └── relatório_*.log      (gerado automaticamente)
 ```
 
-#### 12.1.5. Instalar FFmpeg
+#### 12.1.5. Edite `Painel_de_Controle.txt` com as configurações da sua live.
 
-1. Acesse https://ffmpeg.org/download.html
-2. Clique em "Windows" → escolha um build (ex.: "gyan.dev" ou "BtbN")
-3. Baixe o arquivo `.zip` (ex.: `ffmpeg-release-essentials.zip`)
-4. Extraia para `C:\ffmpeg\`
-5. Adicione ao PATH do sistema:
-   - Tecla Windows → "Variáveis de Ambiente"
-   - Em "Variáveis do sistema" → selecione `Path` → "Editar"
-   - "Novo" → cole `C:\ffmpeg\bin`
-   - OK em todas as janelas
-6. Verifique (abra um NOVO terminal):
-   ```bash
-   ffmpeg -version
-   ```
+#### 12.1.6. Execute
 
-6. Configure o OBS Studio:
-   - Ative o WebSocket em Ferramentas → WebSocket Server Settings.
-   - Porta padrão: 4455 (ou configure no Painel de Controle).
-   - Senha opcional.
-
-7. Coloque todos os arquivos do projeto na estrutura correta:
-   ```
-   TWITCH/
-   ├── Painel_de_Controle.txt
-   ├── tempo_duracao.txt
-   ├── controle_censura.txt
-   ├── relay_status.json        (gerado automaticamente)
-   ├── relay.log                (gerado automaticamente)
-   ├── Relay (iniciar).bat
-   ├── DOCUMENTACAO_COMPLETA.md
-   ├── Script/
-   │   ├── Diamante Roxo.py
-   │   ├── relay.js
-   │   ├── node_modules/        (criado pelo npm install)
-   │   └── relatório_*.log      (gerado automaticamente)
-   ```
+```bash
+python "Script/Diamante Roxo.py"
+```
 
 8. Edite `Painel_de_Controle.txt` com as configurações da sua live.
 
@@ -644,7 +624,7 @@ O sistema roda sozinho seguindo os horários do painel.
 O usuário pode:
 - Trocar cenas manualmente no OBS → o sistema redireciona automaticamente.
 - Pular filmes manualmente → detectado como skip.
-- Mutar o MSG_PIX → sistema pausa ducking.
+- Mutar o [FONTE_ALERTA] → sistema pausa ducking.
 
 ### 12.3. Encerramento
 
@@ -653,95 +633,36 @@ Para encerrar manualmente: feche a janela do terminal.
 
 ---
 
-## 13. Relay (FFmpeg Relay para Kick)
+## 13. Transmissão Direta para a Kick (sem Relay)
 
-### 14.1. Visão Geral
+### 13.1. Visão Geral
 
-O Relay é uma camada intermediária que desacopla o OBS da instabilidade do servidor RTMPS do Kick (AWS MediaLive).  
-Em vez de OBS → Kick direto, o fluxo passa por um servidor RTMP local que encaminha o stream via FFmpeg.
+Desde a v5.0, o **relay FFmpeg foi removido**. O OBS transmite **diretamente** para a Kick, sem camada intermediária. O fluxo de relay de versões anteriores ([RELAY_JS], [NODE_MEDIA], FFmpeg push RTMPS) **não existe mais** no código atual.
 
-### 14.2. Arquitetura
-
-```
-OBS → rtmp://127.0.0.1:1936/live/stream (local)
-                ↓
-        node-media-server (porta 1936)
-                ↓
-        FFmpeg → rtmps://fa723fc1b171.global-contribute.live-video.net/app/KEY
-                ↓
-              Kick (AWS MediaLive)
-```
-
-### 14.3. Componentes
-
-| Arquivo | Função |
-|---|---|
-| `relay.js` | Node.js: servidor RTMP local (node-media-server) + FFmpeg push |
-| `Painel_de_Controle.txt` | Config: `usar_relay`, `kick_stream_key`, `kick_stream_server` |
-| `Relay (iniciar).bat` | Atalho para iniciar relay manualmente (independente) |
-
-### 14.4. Fluxo de Inicialização
-
-1. `conectar_obs()` (agendado) → conecta OBS + **inicia relay** (node-media-server)
-2. `start_sistema()` (agendado) → chama `testar_conexao_kick()` (FFmpeg dummy 0.5s)
-   - Se falhar → **aborta**, nenhum `start_stream` é chamado
-3. `iniciar_relay()` → sobe relay se ainda não estiver rodando
-4. `client.start_stream()` → OBS envia para `127.0.0.1:1936`
-5. relay.js detecta `postPublish` → inicia `FFmpeg -c copy` para o Kick
-6. `esperar_relay_conectar(timeout=30)` → aguarda `relay_status.json: {connected: true}`
-7. Se timeout → `client.stop_stream()` + abort
-8. `iniciar_fluxo()` → cenas, mídias, etc.
-
-### 14.5. Reconexão Automática
-
-**relay.js:** Quando FFmpeg morre e `obsPublishing == true`, reinicia em 3s.  
-**Python (monitor):** Quando relay cai durante live:
-
-1. `pausar_filme_se_rodando()` → pausa fonte FILMES se cena = MÍDIAS
-2. Mata processo relay (node-media-server + FFmpeg) → OBS entra em **Reconnecting**
-3. Limpa status, espera 2s
-4. Reinicia relay
-5. OBS reconecta, FFmpeg reinicia via `postPublish`
-6. `relay_status.json: {connected: true}` → programa retomada do filme em **5s**
-7. Após 5s estável: `retomar_filme_se_pausado()` → play na fonte FILMES
-
-### 14.6. Teste de Conexão
-
-`testar_conexao_kick()` executa FFmpeg com entrada sintética de 0.5s para Kick:
+### 13.2. Arquitetura
 
 ```
-ffmpeg -f lavfi -i color=c=black:s=1280x720:r=30:d=1
-       -f lavfi -i anullsrc=r=48000:cl=stereo
-       -c:v libx264 -preset ultrafast -t 0.5
-       -f flv rtmps://server/live/KEY
+OBS Studio → Kick (configurado diretamente nas settings de transmissão do OBS)
 ```
 
-- Exit code 0 → Kick acessível → prossegue
-- Exit code ≠ 0 → aborta sistema
+- A conexão com a Kick é configurada manualmente no OBS (Ferramentas → Configurações → Transmissão).
+- O sistema não inicia nem gerencia nenhum processo de relay.
+- O parâmetro `usar_relay` e as chaves `kick_stream_key` / `kick_stream_server` **não são mais lidos** pelo código.
 
-### 14.7. Comportamento Sem Relay
+### 13.3. Por que foi removido
 
-Se `usar_relay = no` no Painel de Controle:
-- Nenhum componente de relay é iniciado
-- `testar_conexao_kick()` não é chamado
-- OBS transmite direto para o servidor configurado manualmente nas settings do OBS
-- Toda lógica de relay é ignorada, sistema funciona como antes
+As versões 4.8 a 4.13 usavam um relay local ([NODE_MEDIA] + FFmpeg) para contornar quedas do servidor RTMPS do Kick. Após testes de estabilidade, a transmissão direta se mostrou suficiente e estável, então o relay virou complexidade desnecessária (processos extras, arquivos `[RELAY_JS]`/`[RELAY_STATUS]`/`[RELAY_LOG]`, dependências de Node.js/FFmpeg). A v5.0 simplificou para OBS → Kick direto.
 
-### 14.8. Dependências
+### 13.4. Impacto nas dependências
 
-- **Node.js** para `relay.js`
-- **node-media-server** (npm) — servidor RTMP local
-- **FFmpeg** no PATH — push RTMPS para o Kick
+Com a remoção do relay:
+- **Node.js** já não é necessário (não há mais `[RELAY_JS]`).
+- **FFmpeg** já não é necessário (não há mais push RTMPS nem `testar_conexao_kick()`).
+- **[NODE_MEDIA]** (npm) já não é necessário.
+- A pasta `Script` não contém mais `[RELAY_JS]` nem `node_modules/`.
+- Os arquivos `[RELAY_LOG]` e `[RELAY_STATUS]` não são mais gerados.
 
-### 14.9. Configuração no Painel de Controle
-
-```
-usar_relay       = yes
-kick_stream_key  = sk_us-west-2_XXXXXXXXXXXXX
-kick_stream_server = rtmps://fa723fc1b171.global-contribute.live-video.net/app/
-```
-
-> **Importante:** O protocolo deve ser `rtmps://` (TLS/SSL). `rtmp://` puro é rejeitado pelo servidor AWS MediaLive.
+> **Nota histórica:** as versões 4.8–4.13 documentaram o relay na JORNADA_DIAMANTE_ROXO.md e no histórico abaixo. Eles permanecem como registro do passado; a v5.0 não usa mais nenhum deles.
 
 ---
 
@@ -763,10 +684,14 @@ kick_stream_server = rtmps://fa723fc1b171.global-contribute.live-video.net/app/
 
 | Versão | Data | Mudanças |
 |---|---|---|
-| 4.8 | 09/07/2026 | **Relay FFmpeg para Kick:** relay.js (node-media-server + FFmpeg push RTMPS), `testar_conexao_kick()` antes de start_stream, correção do protocolo `rtmp://` → `rtmps://`, correção do bug `start_stream()` nunca chamado, detecção de conexão `[q] to stop`, pausa automática de filme na queda do relay com retomada 5s após reconexão, sincronia OBS → "Reconnecting" via kill do node-media-server. Encerramento suave do FFmpeg (envia `q` pelo stdin). |
+| 5.0 | 31/08/2026 | **Pausa por quantidade + oráculo isolado + correções de robustez:** pausa após N filmes (`pausa_apos_filmes`/`pausa_retorno`, `aba_pausa("quantidade")` com retomada via seek na posição salva), retornos independentes oráculo/quantidade (`oraculo_retorno`/`pausa_retorno`), `_vol_lock` para thread-safety do cofre de volumes, `_travar_painel_seguranca()` compartilhada entre `stop_sistema`/`_ao_parar` (correção que procurava pela chave e não pelo texto exato), `finally` garante `_stopping_stream = False` mesmo se `stop_stream/stop_record` falhar, `except Exception` em vez de `except:` em todos os blocos, agendamento ignora campos de horário em branco (não mais `00:00:00` à meia-noite), leitura do painel com `with open()` fechando o arquivo, **remoção do relay FFmpeg** (OBS transmite direto para a Kick; Relay, `usar_relay`, `kick_stream_key`/`kick_stream_server`, `testar_conexao_kick()`, `[RELAY_JS]` e as dependências Node.js/FFmpeg deixam de existir). |
+| 4.13 | 15/07/2026 | Relay v2: SRT primário, HTTP health endpoint (`/health`, `/stats`), retry inteligente com jitter (8 delays + ±250ms), ciclo SRT→RTMPS→SRT, parse detalhado do stderr (bitrate/fps), watchdog de dados, monitor via HTTP no Python. |
+| 4.12 | 15/07/2026 | **Monitor de saúde da stream:** thread daemon `monitorar_saude_stream()` com conexão WebSocket própria polla `GetStreamStatus` a cada 5min e detecta splits mesmo com auto-reconnect do OBS. |
+| 4.11 | 14/07/2026 | Correções relay: `h264_metadata` `tick_rate=30` (FFmpeg 8.1), fluxo antecipado (`iniciar_fluxo()` roda imediato, relay conecta em paralelo), monitor de stream nativo via `OutputStateChanged` com flag `_stopping_stream`. |
+| 4.8 | 09/07/2026 | **Relay FFmpeg para Kick:** [RELAY_JS] ([NODE_MEDIA] + FFmpeg push RTMPS), `testar_conexao_kick()` antes de start_stream, correção do protocolo `rtmp://` → `rtmps://`, correção do bug `start_stream()` nunca chamado, detecção de conexão `[q] to stop`, pausa automática de filme na queda do relay com retomada 5s após reconexão, sincronia OBS → "Reconnecting" via kill do [NODE_MEDIA]. Encerramento suave do FFmpeg (envia `q` pelo stdin). |
 | 4.10 | 10/07/2026 | **Reorganização da pasta Códigos:** `TWITCH/` → `Diamante_Roxo/`, scripts espalhados agrupados em `Utilitarios/`, `Manutencao/`, `Antigos/`. Caminhos atualizados nos utilitários. |
 | 4.9 | 10/07/2026 | **Modo destino no estudo:** campo `modo_destino` no Painel de Controle define se `iniciar_midias` vai para filmes ou rerun. `iniciar_midias_direto()` altera `global_modo_conteudo` + título da live (`REACT`/`RERUN`) antes da transição. |
-| 4.7 | 09/07/2026 | Modo ESTUDO: `modo_conteudo = estudo` com fluxo manual + agendamento `iniciar_midias` para transição automática a FILMES/RERUN. Novas fontes EV BRADESCO e WORD_VS desligadas em `aba_midias()` e `aba_rerun()`. Agendamento condicional (`start_sistema` ignorado se modo=estudo). |
+| 4.7 | 09/07/2026 | Modo ESTUDO: `modo_conteudo = estudo` com fluxo manual + agendamento `iniciar_midias` para transição automática a FILMES/RERUN. Novas fontes [SITE] e [ANOTACOES] desligadas em `aba_midias()` e `aba_rerun()`. Agendamento condicional (`start_sistema` ignorado se modo=estudo). |
 | 4.6 | 08/07/2026 | Localização dinâmica de softwares por caminhos conhecidos (substitui caminhos fixos .lnk). Migração de `os.startfile()` para `subprocess.Popen()`. Fallback seguro quando executável não encontrado. |
 | 4.5 | 06/07/2026 | Revisão de data + versão. Discussão estratégica: migração definitiva pro Kick, categoria Movierooms |
 | 4.4 | 04/07/2026 | Sistema de plataforma: `plataforma = twitch` inicia todos os apps, `kick` inicia só OBS + Streamer.bot |
