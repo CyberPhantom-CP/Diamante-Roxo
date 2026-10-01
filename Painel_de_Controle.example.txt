@@ -58,6 +58,7 @@ obs_password = SUA_SENHA_AQUI
 # == Software ==
 mixitup           = 00:00:00
 streamerbot       = 00:00:00
+kickerino         = 00:00:00
 chatty            = 00:00:00
 obs64studio       = 00:00:00
 minimizar_janelas = 00:00:00

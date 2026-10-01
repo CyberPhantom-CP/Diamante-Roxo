@@ -1,6 +1,6 @@
 ﻿# Diamante Roxo
 
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v5.0-7b2cbf)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v5.1-7b2cbf)
 ![Python](https://img.shields.io/badge/Python-3.14-7b2cbf)
 ![Status](https://img.shields.io/badge/status-em%20uso-7b2cbf)
 
@@ -18,11 +18,12 @@ Projeto pessoal de uso contínuo em lives reais. Configuração 100% por arquivo
 | **Streamer.bot** | Automação de eventos, comandos e alertas |
 | **Mix It Up** | Chat, comandos e interatividade |
 | **Chatty** | Cliente de chat com moderação |
+| **Kickerino** | Cliente de chat da Kick |
 
 ## Plataformas
 
 - **Twitch** — todos os aplicativos (Mix It Up, Chatty, Streamer.bot, OBS)
-- **Kick** — apenas Streamer.bot e OBS
+- **Kick** — Streamer.bot, Kickerino e OBS
 
 ## Modos de operação
 
@@ -86,7 +87,7 @@ Diamante-Roxo\
 - Windows (utiliza `pywinauto`, `psutil` e `schedule`)
 - Python 3.14 (testado nesta versão; códigos 3.10+ funcionam)
 - OBS Studio com WebSocket habilitado (porta [PORTA])
-- Streamer.bot / Mix It Up / Chatty (conforme a plataforma)
+- Streamer.bot / Mix It Up / Chatty / Kickerino (conforme a plataforma)
 - Conexão de rede estável para transmitir direto na Kick
 
 ## Licença

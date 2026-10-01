@@ -1,4 +1,4 @@
-﻿# Diamante Roxo v5.0 — Documentação Completa
+﻿# Diamante Roxo v5.1 — Documentação Completa
 
 Sistema de automação para transmissão ao vivo baseado em OBS Studio.
 Gerencia cenas, áudio, alertas e transições de forma autônoma.
@@ -24,9 +24,9 @@ Gerencia cenas, áudio, alertas e transições de forma autônoma.
 
 ## 1. Visão Geral
 
-**Nome:** Diamante Roxo v5.0  
+**Nome:** Diamante Roxo v5.1  
 **Autor:** CyberPhantom (C.P.)  
-**Função:** Automatizar transmissões ao vivo gerenciando OBS Studio, Streamer.bot, Mix It Up e Chatty.
+**Função:** Automatizar transmissões ao vivo gerenciando OBS Studio, Streamer.bot, Mix It Up, Chatty e Kickerino.
 
 O sistema opera em três modos principais:
 - **FILMES:** Reprodução de mídia com sistema de censura por tempo e saltos pós-créditos.
@@ -35,7 +35,7 @@ O sistema opera em três modos principais:
 
 Suporta duas plataformas:
 - **Twitch:** todos os apps são iniciados (Mix It Up, Chatty, Streamer.bot, OBS).
-- **Kick:** apenas Streamer.bot e OBS são iniciados.
+- **Kick:** Streamer.bot, Kickerino e OBS são iniciados.
 
 A configuração é feita inteiramente pelo arquivo `Painel_de_Controle.txt`, permitindo que o sistema rode sozinho sem intervenção manual durante a live.
 
@@ -118,6 +118,7 @@ O arquivo `Painel_de_Controle.txt` define horários para cada ação:
 | `streamerbot` | Inicia Streamer.bot | Ambas |
 | `[OBS_SCHED]` | Inicia OBS Studio | Ambas |
 | `chatty` | Inicia Chatty | Só Twitch |
+| `kickerino` | Inicia Kickerino (cliente de chat da Kick) | Só Kick |
 | `minimizar_janelas` | Minimiza todos os apps | - |
 | `conectar_obs` | Conecta ao OBS WebSocket | - |
 | `start_sistema` | Inicia transmissão/gravação | - |
@@ -338,6 +339,7 @@ mixitup               = HH:MM:SS         # Horário para iniciar
 streamerbot           = HH:MM:SS
 [OBS_SCHED]           = HH:MM:SS
 chatty                = HH:MM:SS
+kickerino              = HH:MM:SS
 minimizar_janelas     = HH:MM:SS
 conectar_obs          = HH:MM:SS
 start_sistema         = HH:MM:SS          # Ignorado se modo=estudo
@@ -392,6 +394,7 @@ Gerado automaticamente na pasta `Script` com timestamps:
 | `start_streamerbot()` | Inicia Streamer.bot (localização dinâmica + subprocess.Popen) |
 | `start_[OBS_SCHED]()` | Inicia OBS Studio (localização dinâmica + subprocess.Popen) |
 | `start_chatty()` | Inicia Chatty (localização dinâmica + subprocess.Popen) |
+| `start_kickerino()` | Inicia Kickerino (localização dinâmica + subprocess.Popen) |
 | `minimizar_janelas()` | Minimiza todos os 4 apps via pywinauto |
 
 ### 9.2. OBS WebSocket
@@ -530,6 +533,7 @@ pip install schedule psutil pywinauto obsws_python
 | **Streamer.bot** | `Streamer.bot.exe` | Eventos, comandos e alertas da live |
 | **Mix It Up** | `MixItUp.exe` | Chat, interatividade e comandos (Twitch) |
 | **Chatty** | `Chatty.exe` | Cliente de chat com moderação (Twitch) |
+| **Kickerino** | `Kickerino.exe` | Cliente de chat da Kick (equivalente ao Chatty). Instala em `Documents/Kickerino_<versão>_Windows/` |
 
 ### 11.4. Arquivos do Projeto (devem estar salvos)
 
@@ -684,6 +688,7 @@ Com a remoção do relay:
 
 | Versão | Data | Mudanças |
 |---|---|---|
+| 5.1 | 01/10/2026 | **Kickerino (cliente de chat da Kick):** novo app gerenciado, exclusivo da plataforma Kick (simétrico ao Chatty, que é exclusivo do Twitch). `start_kickerino()` + agendamento `kickerino` no painel sob o gate `plataforma == kick` + minimização de janela. `localizar_software()` agora aceita wildcard em qualquer trecho do path (necessário porque a pasta do app carrega a versão no nome, ex.: `Kickerino_1.43_Windows`, então um path fixo quebraria a cada atualização). Correção de bug em `fontes_por_cena["PAUSA"]`, que estava como `["SPOTIFY, MÚSICAS"]` (uma string com vírgula) e portanto nunca aplicava ducking — agora é `["SPOTIFY", "MÚSICAS"]`. `aba_midias()` desliga MÚSICAS e `aba_rerun()` liga MÚSICAS. |
 | 5.0 | 31/08/2026 | **Pausa por quantidade + oráculo isolado + correções de robustez:** pausa após N filmes (`pausa_apos_filmes`/`pausa_retorno`, `aba_pausa("quantidade")` com retomada via seek na posição salva), retornos independentes oráculo/quantidade (`oraculo_retorno`/`pausa_retorno`), `_vol_lock` para thread-safety do cofre de volumes, `_travar_painel_seguranca()` compartilhada entre `stop_sistema`/`_ao_parar` (correção que procurava pela chave e não pelo texto exato), `finally` garante `_stopping_stream = False` mesmo se `stop_stream/stop_record` falhar, `except Exception` em vez de `except:` em todos os blocos, agendamento ignora campos de horário em branco (não mais `00:00:00` à meia-noite), leitura do painel com `with open()` fechando o arquivo, **remoção do relay FFmpeg** (OBS transmite direto para a Kick; Relay, `usar_relay`, `kick_stream_key`/`kick_stream_server`, `testar_conexao_kick()`, `[RELAY_JS]` e as dependências Node.js/FFmpeg deixam de existir). |
 | 4.13 | 15/07/2026 | Relay v2: SRT primário, HTTP health endpoint (`/health`, `/stats`), retry inteligente com jitter (8 delays + ±250ms), ciclo SRT→RTMPS→SRT, parse detalhado do stderr (bitrate/fps), watchdog de dados, monitor via HTTP no Python. |
 | 4.12 | 15/07/2026 | **Monitor de saúde da stream:** thread daemon `monitorar_saude_stream()` com conexão WebSocket própria polla `GetStreamStatus` a cada 5min e detecta splits mesmo com auto-reconnect do OBS. |

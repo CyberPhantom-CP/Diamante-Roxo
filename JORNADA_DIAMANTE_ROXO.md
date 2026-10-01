@@ -1,4 +1,4 @@
-﻿# Diamante Roxo — Jornada v1.0 → v5.0
+﻿# Diamante Roxo — Jornada v1.0 → v5.1
 
 ## Origem (24/03/2026)
 
@@ -13,7 +13,7 @@ O `exit()` foi removido e o script começou a funcionar. Mas era frágil:
 
 ## A grande fusão
 
-Os dois scripts (Twitch + Kick) foram unificados num só: **Diamante Roxo**. Nasceu o `Painel_de_Controle.txt` — tudo configurável sem mexer no código. Plataforma vira chave: `twitch` abre todos os apps, `kick` só OBS + Streamer.bot.
+Os dois scripts (Twitch + Kick) foram unificados num só: **Diamante Roxo**. Nasceu o `Painel_de_Controle.txt` — tudo configurável sem mexer no código. Plataforma vira chave: `twitch` abre todos os apps, `kick` só OBS + Streamer.bot (e, desde a v5.1, também o Kickerino).
 
 ## GrampeadoOBS — o sistema de alertas
 
@@ -317,3 +317,54 @@ O código que travava o painel ao parar estava duplicado e com falha silenciosa:
 | Locks no cofre | 0 | 1 (`_vol_lock`) |
 | `except:` puros | vários | 0 |
 | Código de trava de segurança | duplicado | `_travar_painel_seguranca()` único |
+
+## v5.1 — Kickerino: cliente de chat da Kick (01/10/2026)
+
+A live migrou de vez para a Kick (o relay foi removido na v5.0). Com o relay fora, o único cliente de chat sobrando era o **Chatty**, que é exclusivo do Twitch — na Kick a live rodava sem chat. O **Kickerino** (cliente de chat da Kick, por CarlBraun) entra como o equivalente do Chatty do lado Kick.
+
+### Como ficou
+
+Simetria perfeita com o gate de plataforma que já existia:
+
+| Plataforma | Apps iniciados |
+|---|---|
+| Twitch | Mix It Up, Chatty, Streamer.bot, OBS |
+| Kick | **Kickerino**, Streamer.bot, OBS |
+
+- `start_kickerino()` — mesmo molde dos outros (checa se já roda, `Popen` com `cwd` na pasta do app).
+- Chave `kickerino` no painel, agendada **só** quando `plataforma == kick` (mesma lógica do bloco `twitch`).
+- Janela minimizada junto com as outras em `minimizar_janelas()`.
+
+### O path que não é fixo
+
+O Kickerino instala em `Documents/Kickerino_<versão>_Windows/` — a **versão está no nome da pasta** (`1.43` hoje). Um path fixo quebraria na próxima atualização, e o app já traz o número da versão na janela.
+
+Solução: `localizar_software()` passou a aceitar **wildcard em qualquer trecho do path**, resolvendo com `glob.glob()`:
+
+```python
+"Kickerino.exe": [
+    r"%UserProfile%\Documents\Kickerino_*\Kickerino\Kickerino.exe",
+]
+```
+
+O `os.path.exists()` não resolve wildcard (ele sóServe path literal), então a checagem nova é separada. O deep-search que já existia (3 níveis, incl. `Documents`) continua como fallback de segurança.
+
+### Bug corrigido: ducking da MÚSICAS na PAUSA
+
+Duas alterações feitas para incluir MÚSICAS no ducking vieram com um erro de sintaxe que anulava o efeito:
+
+```python
+"PAUSA": ["SPOTIFY, MÚSICAS"]   # errado: uma string, vírgula dentro
+```
+
+O código itera a lista e aplica volume em cada item — então ele tentava adjustar uma fonte llamada literalmente `"SPOTIFY, MÚSICAS"`, que não existe no OBS. Nenhum ducking acontecia na PAUSA (nem no SPOTIFY, nem na MÚSICAS). O certo é a lista de dois itens. Além disso, `aba_midias()` passou a desligar MÚSICAS e `aba_rerun()` a ligar.
+
+### Números v5.1
+
+| Métrica | v5.0 | v5.1 |
+|---------|------|------|
+| Linhas Python | 1839 | 1882 |
+| Apps gerenciados | 4 | 5 (Kickerino) |
+| Apps no modo Kick | 2 | 3 (OBS, Streamer.bot, Kickerino) |
+| Wildcard em `localizar_software` | não | sim (glob) |
+| `fontes_por_cena["PAUSA"]` | errado | `["SPOTIFY", "MÚSICAS"]` |
