@@ -1878,5 +1878,10 @@ signal.signal(signal.SIGINT, _sinal_parar)
 while not encerrar_sistema:
     verificar_agendamento()  # Verifica a cada ciclo para detectar mudanças no arquivo
     
-    schedule.run_pending()
+    try:
+        schedule.run_pending()
+    except Exception as e:
+        # Um app que falhou ao abrir (permissao, caminho, etc) nao pode derrubar o sistema
+        log(f"[ERRO] Falha ao executar tarefa agendada: {e}")
+        time.sleep(5)                      # Evita loop apertado se o erro se repetir
     time.sleep(ultimo_polling)             # 3s entre ciclos para reduzir carga na CPU
