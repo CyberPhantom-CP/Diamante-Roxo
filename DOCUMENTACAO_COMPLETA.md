@@ -363,8 +363,8 @@ Formato de cada linha: `DURAÇÃO | GATILHO> DESTINO; GATILHO> DESTINO`
 #  DURAÇÃO   :  Tempo do filme sem créditos. Obrigatório.
 #  APÓS O |  :  Saltos pós-crédito. Opcional, vários separados por (;).
 #
-#  EXEMPLO   :  01:36:30 | 00:10:00>00:12:30;00:45:00>00:47:00
-#  EXEMPLO   :  01:49:42
+#  EXEMPLO   :  00:00:00 | 00:00:00>00:00:00;00:00:00>00:00:00
+#  EXEMPLO   :  00:00:00
 # ====================================================================
 
 # ==== Bloco de Tempos ====
