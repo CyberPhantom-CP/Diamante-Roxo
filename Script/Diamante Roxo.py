@@ -1428,7 +1428,8 @@ def arquivo_tempo(caminho=None):
         with open(caminho, "r", encoding="utf-8") as f:
             for linha in f:
                 linha = linha.strip()
-                if linha:
+                # Ignora o bloco de comentarios, igual ao Controle de Censuras e ao Painel
+                if linha and not linha.startswith("#") and not linha.startswith("="):
                     tempos.append(linha)
     except Exception as e:
         print()

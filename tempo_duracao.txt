@@ -1,2 +1,11 @@
-01:41:02
-01:35:40
+#        SISTEMA DE TEMPOS
+# ====================================================================
+# REGRAS: ("DURACAO (HH:MM:SS) | GATILHO> DESTINO; GATILHO> DESTINO").
+# DURACAO: tempo do filme sem creditos, obrigatorio.
+# APOS O (|): opcional. Varios separados por (;).
+# EXEMPLO: 01:36:30 | 00:10:00>00:12:30;00:45:00>00:47:00
+# ====================================================================
+
+# ==== Bloco de Tempos ====
+01:36:30
+01:49:42

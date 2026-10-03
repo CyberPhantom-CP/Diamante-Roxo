@@ -1,4 +1,4 @@
-﻿# Diamante Roxo
+# Diamante Roxo
 
 ![Versão](https://img.shields.io/badge/vers%C3%A3o-v5.1-7b2cbf)
 ![Python](https://img.shields.io/badge/Python-3.14-7b2cbf)
@@ -66,7 +66,7 @@ Diamante-Roxo\
 ├── JORNADA_DIAMANTE_ROXO.md         → histórico da jornada de desenvolvimento
 ├── Painel_de_Controle.example.txt   → modelo de configuração
 ├── controle_censura.txt             → regras de censura por filme
-├── tempo_duracao.txt                → durações e saltos pós-créditos
+├── tempo_duracao.txt                → durações e saltos pós-créditos (com cabeçalho comentado)
 ├── Diamante Roxo (Execução manual).bat → launcher manual
 └── .gitignore
 ```
@@ -81,6 +81,19 @@ Diamante-Roxo\
 4. Execute o `Diamante Roxo.py` (ou o `.bat`)
 
 > **Aviso de segurança:** este sistema depende de uma configuração muito específica do OBS (cenas, fontes, coleções com nomes exatos). Sem o OBS idêntico ao original, o sistema **não funciona** — e sem o painel correto, a trava de segurança bloqueia a inicialização de propósito. Este é um projeto pessoal, não um produto distribuível.
+
+## Utilitários
+
+Os dois utilitários preenchem os arquivos de texto da raiz do projeto:
+
+| Script | Gera | Observação |
+|---|---|---|
+| `Utilitarios/gerar_tempo.py` | `tempo_duracao.txt` | Extrai a duração dos vídeos com `ffprobe`. Escreve o cabeçalho comentado no padrão do `controle_censura.txt` e **preserva** os comentários que você adicionar. Na opção "2" (dia novo), também reseta `controle_censura.txt` com uma linha `False | ` por sessão. |
+| `Utilitarios/Gerar_Censuras.py` | `controle_censura.txt` | Captura as cenas a censurar. Requer `keyboard` e a Interface Web do MPC-BE na porta 13579. |
+
+Ambos usam caminho hardcoded: preencha a constante `PASTA_*` no topo antes de executar.
+
+> **Por que a censura é posicional:** o script principal casa a censura do filme *N* com a linha *N* do `tempo_duracao.txt`. Por isso o `gerar_tempo.py` grava exatamente uma linha `False | ` por sessão — se os dois arquivos tiverem quantidades diferentes de linhas, cada filme recebe a censura do vizinho.
 
 ## Requisitos
 

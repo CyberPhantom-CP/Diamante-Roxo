@@ -1,4 +1,4 @@
-﻿# Diamante Roxo — Jornada v1.0 → v5.1
+# Diamante Roxo — Jornada v1.0 → v5.1
 
 ## Origem (24/03/2026)
 
@@ -51,7 +51,7 @@ Códigos/
 └── Projetos_CP.code-workspace
 ```
 
-Apenas dois arquivos com caminho hardcoded foram atualizados (`Gerar_Censuras.py` e `gerar_tempo.py`) — o script principal e o [RELAY_JS] usam caminhos relativos dinâmicos, então funcionam com qualquer nome de pasta.
+Apenas dois arquivos com caminho hardcoded foram atualizados (`Gerar_Censuras.py` e `gerar_tempo.py`) — o script principal e o relay.js usam caminhos relativos dinâmicos, então funcionam com qualquer nome de pasta.
 
 ### Correção: retornar_midias durante RERUN
 
@@ -62,17 +62,17 @@ Apenas dois arquivos com caminho hardcoded foram atualizados (`Gerar_Censuras.py
 Inventário completo de tudo que o sistema precisa pra funcionar do zero:
 
 - Python + pip (4 pacotes: `schedule`, `psutil`, `pywinauto`, `obsws_python`)
-- Node.js + npm (1 pacote: `[NODE_MEDIA]`)
+- Node.js + npm (1 pacote: `node-media-server`)
 - FFmpeg no PATH
 - 4 softwares (OBS, Streamer.bot, Mix It Up, Chatty)
 - 8 arquivos do projeto que precisam de backup
-- Config do OBS (`[PASTA_OBS]/`)
+- Config do OBS (`[CONFIG_OBS]`)
 
 Cada instalação tem passo a passo com link direto no `DOCUMENTACAO_COMPLETA.md` — se formatar o PC, segue a seção 12.1 e volta ao ar.
 
 ### Encerramento suave do relay
 
-`[RELAY_JS]` agora envia `q` pelo stdin do FFmpeg no lugar de `SIGTERM` (inexistente no Windows). FFmpeg fecha a conexão RTMP limpa — sem "Protection Disconnecting" no Kick.
+`relay.js` agora envia `q` pelo stdin do FFmpeg no lugar de `SIGTERM` (inexistente no Windows). FFmpeg fecha a conexão RTMP limpa — sem "Protection Disconnecting" no Kick.
 
 ### Modo destino no estudo
 
@@ -98,16 +98,16 @@ Novo modo de operação: **ESTUDO**. Diferença fundamental dos anteriores:
 
 ## v4.8 — Relay FFmpeg para Kick (09/07/2026)
 
-O Kick usa AWS MediaLive como servidor de ingestão. O problema: o endpoint `[HOST_STREAM]` oscila — OBS entra em loop de reconexão, stream cai, live morre.
+O Kick usa AWS MediaLive como servidor de ingestão. O problema: o endpoint `[SERVIDOR_KICK]` oscila — OBS entra em loop de reconexão, stream cai, live morre.
 
 **Solução:** um relay local. OBS nunca mais conecta direto no Kick.
 
 ```
-OBS → [NODE_MEDIA] ([IP_LOCAL]:1936) → FFmpeg → rtmps://Kick
+OBS → node-media-server ([IP_LOCAL]:[PORTA_RTMP]) → FFmpeg → rtmps://Kick
 ```
 
 Três componentes novos:
-- `[RELAY_JS]`: Node.js + [NODE_MEDIA] + FFmpeg. Faz tudo sozinho.
+- `relay.js`: Node.js + node-media-server + FFmpeg. Faz tudo sozinho.
 - `Relay (iniciar).bat`: atalho pra testar sem o script.
 - Seção `RELAY` no `Painel_de_Controle.txt`: `usar_relay`, `kick_stream_key`, `kick_stream_server`.
 
@@ -138,7 +138,7 @@ Outro erro desde o início: o relay tentava `rtmp://` (porta 1935), mas o AWS Me
 Quando o relay cai durante a live:
 1. Monitor detecta
 2. Pausa o filme (como nos alertas)
-3. Mata o [NODE_MEDIA] → OBS entra em **Reconnecting**
+3. Mata o node-media-server → OBS entra em **Reconnecting**
 4. Reinicia o relay
 5. OBS reconecta, FFmpeg sobe
 6. Após 5s de estabilidade: filme retoma
@@ -216,7 +216,7 @@ Thread daemon com **conexão WebSocket própria** (`ReqClient` separado) — zer
 
 ### IPv4-only já configurado
 
-O perfil OBS `KICK/[PERFIL]` já estava em `IPFamily=IPv4` — uma variável a menos para investigar.
+O perfil OBS `[PERFIL_OBS]/[PERFIL_OBS].ini` já estava em `IPFamily=IPv4` — uma variável a menos para investigar.
 
 ## v4.13 — Relay v2: SRT primário, HTTP health, retry inteligente (15/07/2026)
 
@@ -226,27 +226,27 @@ O relay v1 tinha:
 - RTMPS como primário (cai ~34 min por timeout TLS do AWS IVS)
 - Fallback SRT só tentava uma vez, sem ciclo de retorno
 - Retry fixo (5/10/20/30s), sem jitter
-- Detecção de conexão via arquivo JSON (`[RELAY_STATUS]`) com race condition
+- Detecção de conexão via arquivo JSON (`relay_status.json`) com race condition
 - Nenhuma métrica de saúde (bitrate, fps, reconexões)
 - Parse de stderr básico (só detectava `[q] to stop`)
 
-### Solução — `[RELAY_JS]` v2 + `Diamante Roxo.py` v4.13
+### Solução — `relay.js` v2 + `Diamante Roxo.py` v4.13
 
-#### [RELAY_JS] v2 (reescrito de 243 → ~300 linhas)
+#### relay.js v2 (reescrito de 243 → ~300 linhas)
 
 **Arquitetura nova:**
 
 1. **SRT como protocolo primário** — SRT tem ARQ (correção de erro embutida), buffer de latência configurável, reconexão transparente. RTMPS vira fallback.
 2. **Retry inteligente com jitter** — exponential backoff: 1s, 2s, 4s, 8s, 15s, 20s, 25s, 30s (cap). ±250ms aleatório evita thundering herd.
 3. **Ciclo SRT→RTMPS→SRT**: se SRT falha → RTMPS imediato (1s). A cada 3 falhas do RTMPS, tenta SRT novamente. Reset na primeira conexão bem-sucedida.
-4. **HTTP health endpoint** (`[HEALTH_ENDPOINT]`): JSON com connected, protocol, bitrate_kbps, fps, uptime_seconds, reconnects, retryCount, lastError. Substitui JSON file como fonte principal (fallback mantido).
+4. **HTTP health endpoint** (`http://[IP_LOCAL]:[PORTA_HEALTH]/health`): JSON com connected, protocol, bitrate_kbps, fps, uptime_seconds, reconnects, retryCount, lastError. Substitui JSON file como fonte principal (fallback mantido).
 5. **Parse detalhado do stderr**: extrai bitrate, fps, frames totais, speed em tempo real. Detecta erros específicos (TLS_ERROR, SRT_ERROR, CONNECTION_REFUSED, TIMEOUT, etc).
 6. **Watchdog de dados**: monitora se FFmpeg está produzindo output. Se 15s sem dados com OBS publicando, loga aviso.
 7. **NMS config melhorada**: `chunk_size: 8192`, `ping_timeout: 10`.
 
 #### Python v4.13 — Monitor via HTTP
 
-1. `obter_status_relay()` — tenta HTTP health endpoint primeiro (`:1937/health`, timeout 2s). Se falhar, lê JSON file (backward compat).
+1. `obter_status_relay()` — tenta HTTP health endpoint primeiro (`:[PORTA_HEALTH]/health`, timeout 2s). Se falhar, lê JSON file (backward compat).
 2. `esperar_relay_conectar()` — usa obter_status_relay(), mostra protocolo ativo.
 3. `_log_relay_stats()` — log periódico a cada 60s: protocolo, bitrate, fps, uptime, reconexões.
 4. `monitorar_relay_loop()` — agora mostra stats detalhados nas transições de estado.
@@ -256,7 +256,7 @@ O relay v1 tinha:
 | Métrica | v4.12 | v4.13 |
 |---------|-------|-------|
 | Linhas Python | ~2022 | ~2060 |
-| [RELAY_JS] | 243 | ~300 |
+| relay.js | 243 | ~300 |
 | Funções relay | 4 | ~15 |
 | HTTP endpoints | 0 | 2 (`/health`, `/stats`) |
 | Protocolos | RTMPS→SRT | SRT→RTMPS→SRT |
@@ -368,3 +368,48 @@ O código itera a lista e aplica volume em cada item — então ele tentava adju
 | Apps no modo Kick | 2 | 3 (OBS, Streamer.bot, Kickerino) |
 | Wildcard em `localizar_software` | não | sim (glob) |
 | `fontes_por_cena["PAUSA"]` | errado | `["SPOTIFY", "MÚSICAS"]` |
+
+## v5.2 — Cabeçalho no `tempo_duracao.txt` (02/10/2026)
+
+O `tempo_duracao.txt` era o único arquivo de texto do projeto **sem** bloco de comentários. Só a `CABECALHO_CENSURA` do `gerar_tempo.py` existia, e nunca era usada no arquivo de tempos.
+
+### O leitor era o ponto fraco
+
+`arquivo_tempo()` aceitava **qualquer** linha não-vazia:
+
+```python
+if linha:
+    tempos.append(linha)
+```
+
+Um comentário ou um cabeçalho ali seria contado como filme — e estouraria no `map(int, ...)` da linha 877, sem dizer qual linha foi. Os outros dois leitores do projeto já filtravam corretamente (`carregar_censuras_do_filme()` e `verificar_agendamento()`); o de tempos era o único fora do padrão.
+
+A correção foi alinhar os três, adotando o filtro que já existia:
+
+```python
+if linha and not linha.startswith("#") and not linha.startswith("="):
+    tempos.append(linha)
+```
+
+O formato de leitura **não mudou**: continua sendo tempo inteiro + gatilhos depois do `|`. Nenhum nome, nenhum `True/False`, nenhuma reordenação.
+
+### O gerador perdia o cabeçalho
+
+`gerar_tempo.py` misturava comentário e dado na mesma lista. Na opção "1" ele lia toda linha não-vazia (inclusive os comentários) e reescrevia tudo junto — a cada execução o arquivo se embaralhava mais. Na opção "2" o bloco era simplesmente perdido, porque `linhas = []`.
+
+Agora existe `separar_arquivo_tempos()`, que devolve os comentários e os dados separados: o cabeçalho padrão é sempre reescrito no final e os comentários do usuário são preservados sob `# --- Comentarios adicionais ---`.
+
+### O vínculo com a censura foi mantido de propósito
+
+A opção "2" continua resetando o `controle_censura.txt` — isso é intencional, não bug: um dia novo de filmes precisa de censuras zeradas.
+
+Havia, porém, um detalhe: o reset escrevia **uma única** linha `False | `, independente de quantos filmes fossem. Como a censura é casada **por posição** (`linhas_validas[indice_filme]`), um dia com 4 filmes ficaria com 1 linha só — e `Gerar_Censuras.py` teria que crescer o arquivo depois, movie a movie. Agora `resetar_censura()` grava uma linha `False | ` por sessão, mantendo o alinhamento desde o primeiro instante.
+
+### Números v5.2
+
+| Métrica | v5.1 | v5.2 |
+|---------|------|------|
+| Filtro de comentários em `arquivo_tempo()` | não | sim |
+| Cabeçalho no `tempo_duracao.txt` | não | sim |
+| `linhas False \|` no reset da censura | 1 (fixo) | 1 por sessão |
+| Formato de leitura | tempo + `\|` gatilhos | **inalterado** |
