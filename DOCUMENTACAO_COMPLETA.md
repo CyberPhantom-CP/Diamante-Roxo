@@ -353,28 +353,28 @@ Lista de durações de filmes, uma por linha. O arquivo possui um cabeçalho de
 comentários no mesmo padrão do `controle_censura.txt`, e esse bloco é ignorado
 na leitura.
 
-Formato de cada linha: `DURAÇÃO | GATILHO> DESTINO; GATILHO> DESTINO`
+Formato de cada linha: `DURAÇÃO | GATILHO > DESTINO ; GATILHO > DESTINO`
 
 ```
 # ====================================================================
 #  SISTEMA DE TEMPOS
 # ====================================================================
-#  FORMATO   :  DURAÇÃO (HH:MM:SS) | GATILHO> DESTINO; GATILHO> DESTINO
+#  FORMATO   :  DURAÇÃO (HH:MM:SS) | GATILHO > DESTINO ; GATILHO > DESTINO
 #  DURAÇÃO   :  Tempo do filme sem créditos. Obrigatório.
 #  APÓS O |  :  Saltos pós-crédito. Opcional, vários separados por (;).
 #
-#  EXEMPLO   :  00:00:00 | 00:00:00>00:00:00;00:00:00>00:00:00
+#  EXEMPLO   :  00:00:00 | 00:00:00 > 00:00:00 ; 00:00:00 > 00:00:00
 #  EXEMPLO   :  00:00:00
 # ====================================================================
 
 # ==== Bloco de Tempos ====
-02:07:11|01:55:00>02:02:00
+02:07:11 | 01:55:00 > 02:02:00
 01:45:30
-02:15:00|02:00:00>02:10:00;02:10:00>02:12:30
+02:15:00 | 02:00:00 > 02:10:00 ; 02:10:00 > 02:12:30
 ```
 
 - **Duração** (`HH:MM:SS`): tempo do filme sem créditos. Obrigatório.
-- **Após o `|`**: saltos pós-crédito, opcionais. `GATILHO> DESTINO` é o
+- **Após o `|`**: saltos pós-crédito, opcionais. `GATILHO > DESTINO` é o
   momento em que o vídeo pula e para onde. Vários separados por `;`.
 
 > **A leitura não depende de posição.** O `arquivo_tempo()` percorre o arquivo
@@ -387,21 +387,23 @@ O bloco de comentários pode ser alterado livremente: a leitura ignora qualquer
 linha que comece com `#` ou `=`, e o gerador `Utilitarios/gerar_tempo.py`
 reescreve o cabeçalho padrão ao final, preservando os comentários adicionais.
 
-Formato: `DURAÇÃO|GATILHO>DESTINO;GATILHO>DESTINO...`
-
 ### 8.3. controle_censura.txt
 
 Censura por tempo para cada filme:
 
 ```
-True|00:05:00>00:07:30>TARJA;00:10:00>00:12:00>CENSURA
-False
-True|00:01:00>00:03:00>TARJA,CENSURA
+True | 00:05:00 > 00:07:30 > TARJA ; 00:10:00 > 00:12:00 > CENSURA
+False | 
+True | 00:01:00 > 00:03:00 > TARJA,CENSURA
 ```
 
-Formato: `STATUS|INICIO>FIM>FONTE;INICIO>FIM>FONTE...`  
-STATUS = True ativa as censuras do filme, False pula.  
+Formato: `STATUS | INICIO > FIM > FONTE ; INICIO > FIM > FONTE`  
+STATUS = `True` ativa as censuras do filme, `False` pula.  
 FONTE pode ser uma ou várias separadas por vírgula.
+
+> É este formato que o `Utilitarios/Gerar_Censuras.py` grava (com espaços ao
+> redor do `>` e do `;`). O `gerar_tempo.py` também reseta este arquivo com uma
+> linha `False | ` por sessão ao usar a opção "2".
 
 ### 8.4. relatório_<data>.log
 

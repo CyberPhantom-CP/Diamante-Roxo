@@ -1,11 +1,11 @@
 # ====================================================================
 #  SISTEMA DE TEMPOS
 # ====================================================================
-#  FORMATO   :  DURAÇÃO (HH:MM:SS) | GATILHO> DESTINO; GATILHO> DESTINO
+#  FORMATO   :  DURAÇÃO (HH:MM:SS) | GATILHO > DESTINO ; GATILHO > DESTINO
 #  DURAÇÃO   :  Tempo do filme sem créditos. Obrigatório.
 #  APÓS O |  :  Saltos pós-crédito. Opcional, vários separados por (;).
 #
-#  EXEMPLO   :  00:00:00 | 00:00:00>00:00:00;00:00:00>00:00:00
+#  EXEMPLO   :  00:00:00 | 00:00:00 > 00:00:00 ; 00:00:00 > 00:00:00
 #  EXEMPLO   :  00:00:00
 # ====================================================================
 
