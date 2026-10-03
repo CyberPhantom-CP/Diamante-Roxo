@@ -356,12 +356,15 @@ na leitura.
 Formato de cada linha: `DURAÇÃO | GATILHO> DESTINO; GATILHO> DESTINO`
 
 ```
-#        SISTEMA DE TEMPOS
 # ====================================================================
-# REGRAS: ("DURACAO (HH:MM:SS) | GATILHO> DESTINO; GATILHO> DESTINO").
-# DURACAO: tempo do filme sem creditos, obrigatorio.
-# APOS O (|): opcional. Varios separados por (;).
-# EXEMPLO: 01:36:30 | 00:10:00>00:12:30;00:45:00>00:47:00
+#  SISTEMA DE TEMPOS
+# ====================================================================
+#  FORMATO   :  DURAÇÃO (HH:MM:SS) | GATILHO> DESTINO; GATILHO> DESTINO
+#  DURAÇÃO   :  Tempo do filme sem créditos. Obrigatório.
+#  APÓS O |  :  Saltos pós-crédito. Opcional, vários separados por (;).
+#
+#  EXEMPLO   :  01:36:30 | 00:10:00>00:12:30;00:45:00>00:47:00
+#  EXEMPLO   :  01:49:42
 # ====================================================================
 
 # ==== Bloco de Tempos ====
@@ -373,6 +376,12 @@ Formato de cada linha: `DURAÇÃO | GATILHO> DESTINO; GATILHO> DESTINO`
 - **Duração** (`HH:MM:SS`): tempo do filme sem créditos. Obrigatório.
 - **Após o `|`**: saltos pós-crédito, opcionais. `GATILHO> DESTINO` é o
   momento em que o vídeo pula e para onde. Vários separados por `;`.
+
+> **A leitura não depende de posição.** O `arquivo_tempo()` percorre o arquivo
+> inteiro e descarta o que começa com `#` ou `=`. Você pode acrescentar,
+> remover ou reordenar linhas de comentário onde quiser — inclusive no meio e
+> no fim — que as sessões continuam sendo lidas corretamente. Só as linhas de
+> dados contam, e a ordem delas é a ordem dos filmes.
 
 O bloco de comentários pode ser alterado livremente: a leitura ignora qualquer
 linha que comece com `#` ou `=`, e o gerador `Utilitarios/gerar_tempo.py`

@@ -12,12 +12,15 @@ ARQUIVO_CENSURA = os.path.join(PASTA_SCRIPT_PRINCIPAL, "controle_censura.txt")
 # Cabecalho padrao do tempo_duracao.txt. Escrito sempre ao final, para o arquivo
 # ficar sempre documentado (mesmo padrao do controle_censura.txt).
 CABECALHO_TEMPOS = [
-    "#        SISTEMA DE TEMPOS",
     "# ====================================================================",
-    '# REGRAS: ("DURACAO (HH:MM:SS) | GATILHO> DESTINO; GATILHO> DESTINO").',
-    "# DURACAO: tempo do filme sem creditos, obrigatorio.",
-    "# APOS O (|): opcional. Varios separados por (;).",
-    "# EXEMPLO: 01:36:30 | 00:10:00>00:12:30;00:45:00>00:47:00",
+    "#  SISTEMA DE TEMPOS",
+    "# ====================================================================",
+    "#  FORMATO   :  DURAÇÃO (HH:MM:SS) | GATILHO> DESTINO; GATILHO> DESTINO",
+    "#  DURAÇÃO   :  Tempo do filme sem créditos. Obrigatório.",
+    "#  APÓS O |  :  Saltos pós-crédito. Opcional, vários separados por (;).",
+    "#",
+    "#  EXEMPLO   :  01:36:30 | 00:10:00>00:12:30;00:45:00>00:47:00",
+    "#  EXEMPLO   :  01:49:42",
     "# ====================================================================",
     "",
     "# ==== Bloco de Tempos ====",
