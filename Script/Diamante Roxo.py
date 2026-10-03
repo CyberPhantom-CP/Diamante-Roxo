@@ -874,8 +874,11 @@ def retomar_filme_se_pausado():
 # === Inicialização de Transmissão/Gravação ===
 
 def esperar(tempo_str, cena_esperada, nome_fonte="FILMES", is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
-    h, m, s = map(int, tempo_str.split(":"))
-    total_segundos = (h*3600 + m*60 + s)
+    total_segundos = converter_hhmmss(tempo_str)
+    if total_segundos is None:
+        print()
+        log(f"[ERRO] Tempo invalido no tempo_duracao.txt: {tempo_str!r}. Esperado HH:MM:SS. Pulando este filme.")
+        return None
     print()
     log(f"Aguardando {tempo_str}...")
     return esperar_com_deteccao(total_segundos, cena_esperada, nome_fonte, is_midia, duracao_proximo_seg, lista_saltos, lista_censuras, indice_filme)
@@ -940,6 +943,25 @@ midia_decorrido_global = 0.0
 timeline_vlc_global = -1
 
 # === SISTEMA DE CENSURA DINÂMICA ===
+def converter_hhmmss(texto):
+    """Converte 'HH:MM:SS' em segundos.
+
+    Devolve None quando o formato nao e valido, em vez de estourar erro.
+    Usado para validar o tempo_duracao.txt e o controle_censura.txt antes
+    de qualquer conta, para que um .txt mal digitado nao derrube a sessao.
+    """
+    partes = texto.strip().split(":")
+    if len(partes) != 3:
+        return None
+    try:
+        h, m, s = (int(p) for p in partes)
+    except ValueError:
+        return None
+    if not (0 <= h < 24 and 0 <= m < 60 and 0 <= s < 60):
+        return None
+    return h * 3600 + m * 60 + s
+
+
 def carregar_censuras_do_filme(indice_filme):
     lista_censuras = []
     if not os.path.exists(caminho_censura):
@@ -967,24 +989,40 @@ def carregar_censuras_do_filme(indice_filme):
                 blocos = conteudo_censuras.split(";")
                 
                 for bloco in blocos:
-                    if ">" in bloco:
-                        definicoes = bloco.split(">")
-                        if len(definicoes) == 3:
-                            h_i, m_i, s_i = map(int, definicoes[0].strip().split(":"))
-                            h_f, m_f, s_f = map(int, definicoes[1].strip().split(":"))
-                        
-                            # Suporta múltiplas fontes separadas por vírgula
-                            fontes_raw = definicoes[2].strip()
-                            # Divide pelas vírgulas se houver, senão pega apenas o nome único
-                            lista_fontes = [f.strip() for f in fontes_raw.split(",")]
-                        
-                            for fonte in lista_fontes:
-                                lista_censuras.append({
-                                    "inicio": h_i * 3600 + m_i * 60 + s_i,
-                                    "fim": h_f * 3600 + m_f * 60 + s_f,
-                                    "fonte": fonte,
-                                    "ativo_agora": False
-                                })
+                    if ">" not in bloco:
+                        continue
+                    definicoes = bloco.split(">")
+                    if len(definicoes) != 3:
+                        print()
+                        log(f"[AVISO] Filme {indice_filme + 1}: trecho de censura descartado, "
+                            f"esperado INICIO > FIM > FONTE -> {bloco.strip()!r}")
+                        continue
+                    try:
+                        inicio = converter_hhmmss(definicoes[0])
+                        fim = converter_hhmmss(definicoes[1])
+                        if inicio is None or fim is None:
+                            raise ValueError("tempo fora do formato HH:MM:SS")
+                        if fim <= inicio:
+                            raise ValueError(f"FIM ({fim}s) precisa ser maior que INICIO ({inicio}s)")
+                        # Suporta múltiplas fontes separadas por vírgula
+                        # Divide pelas vírgulas se houver, senão pega apenas o nome único
+                        lista_fontes = [f.strip() for f in definicoes[2].strip().split(",") if f.strip()]
+                        if not lista_fontes:
+                            raise ValueError("nenhuma fonte informada")
+                    except Exception as erro:
+                        # Um trecho ruim nao descarta os outros do mesmo filme
+                        print()
+                        log(f"[AVISO] Filme {indice_filme + 1}: trecho de censura descartado "
+                            f"({erro}) -> {bloco.strip()!r}")
+                        continue
+                    
+                    for fonte in lista_fontes:
+                        lista_censuras.append({
+                            "inicio": inicio,
+                            "fim": fim,
+                            "fonte": fonte,
+                            "ativo_agora": False
+                        })
     except Exception as e:
         print()
         log(f"Erro ao processar censura no Filme {indice_filme + 1}: {e}")
@@ -1306,9 +1344,15 @@ def aba_midias():
         # === CALCULAR A DURAÇÃO DO PRÓXIMO FILME EM SEGUNDOS ===
         duracao_proximo_seg = 0
         if i + 1 < total:  
-            linha_proximo = tempos[i+1].split("|")[0].strip()
-            h_p, m_p, s_p = map(int, linha_proximo.split(":"))
-            duracao_proximo_seg = h_p * 3600 + m_p * 60 + s_p
+            # Pelo helper validado: se o proximo tempo vier quebrado, o filme
+            # atual segue rodando sem antecipacao em vez de derrubar o laco.
+            proximo_seg = converter_hhmmss(tempos[i+1].split("|")[0])
+            if proximo_seg is None:
+                print()
+                log(f"[AVISO] SESSÃO {i+1:02d}: nao foi possivel ler a duracao do proximo "
+                    f"filme ({tempos[i+1]!r}). Seguindo sem tempo de antecipacao.")
+            else:
+                duracao_proximo_seg = proximo_seg
 
         if midia_decorrido_global > 0:
             print()
@@ -1424,16 +1468,33 @@ def arquivo_tempo(caminho=None):
         caminho = os.path.join(diretorio_base, "tempo_duracao.txt")
         
     tempos = []
+    descartadas = 0
     try:
         with open(caminho, "r", encoding="utf-8") as f:
-            for linha in f:
+            for numero, linha in enumerate(f, 1):
                 linha = linha.strip()
                 # Ignora o bloco de comentarios, igual ao Controle de Censuras e ao Painel
                 if linha and not linha.startswith("#") and not linha.startswith("="):
+                    # Só aceita duração válida: um texto errado no .txt é registrado
+                    # e pulado, em vez de quebrar a conta do próximo filme mais adiante.
+                    if converter_hhmmss(linha.split("|")[0]) is None:
+                        print()
+                        log(f"[AVISO] tempo_duracao.txt linha {numero} ignorada: "
+                            f"duração inválida (esperado HH:MM:SS) -> {linha!r}")
+                        descartadas += 1
+                        continue
                     tempos.append(linha)
     except Exception as e:
         print()
         log(f"Erro ao ler o arquivo de tempos ({caminho}): {e}")
+    
+    if descartadas:
+        print()
+        log(f"[AVISO] tempo_duracao.txt: {descartadas} linha(s) inválida(s) ignorada(s). "
+            f"Confira o formato HH:MM:SS.")
+    if not tempos:
+        print()
+        log(f"[ERRO] tempo_duracao.txt não tem nenhum tempo válido. O sistema não pode continuar.")
     return tempos
 
 def skip_videos(nome_fonte="FILMES"):
