@@ -943,12 +943,11 @@ midia_decorrido_global = 0.0
 timeline_vlc_global = -1
 
 # === SISTEMA DE CENSURA DINÂMICA ===
-def converter_hhmmss(texto):
-    """Converte 'HH:MM:SS' em segundos.
+def converter_hhmmss_tupla(texto):
+    """Valida 'HH:MM:SS' e devolve (h, m, s), ou None se for invalido.
 
-    Devolve None quando o formato nao e valido, em vez de estourar erro.
-    Usado para validar o tempo_duracao.txt e o controle_censura.txt antes
-    de qualquer conta, para que um .txt mal digitado nao derrube a sessao.
+    Versao que devolve as partes separadas, para os trechos que precisam
+    montar um datetime (horario de retorno da pausa e alvo do Rerun).
     """
     partes = texto.strip().split(":")
     if len(partes) != 3:
@@ -959,6 +958,20 @@ def converter_hhmmss(texto):
         return None
     if not (0 <= h < 24 and 0 <= m < 60 and 0 <= s < 60):
         return None
+    return h, m, s
+
+
+def converter_hhmmss(texto):
+    """Converte 'HH:MM:SS' em segundos.
+
+    Devolve None quando o formato nao e valido, em vez de estourar erro.
+    Usado para validar o tempo_duracao.txt e o controle_censura.txt antes
+    de qualquer conta, para que um .txt mal digitado nao derrube a sessao.
+    """
+    horario = converter_hhmmss_tupla(texto)
+    if horario is None:
+        return None
+    h, m, s = horario
     return h * 3600 + m * 60 + s
 
 
@@ -1531,13 +1544,18 @@ def aba_pausa(modo="oraculo"):
                         if len(partes) == 2:
                             retorno_str = partes[1].strip()
                             break
-        try:
-            h_r, m_r, s_r = map(int, retorno_str.split(":"))
+        horario_retorno = converter_hhmmss_tupla(retorno_str)
+        if horario_retorno is None:
+            # Antes isso falhava em silencio: a pausa simplesmente nunca voltava.
+            print()
+            log(f"[AVISO] Horário de retorno ({chave_retorno}) inválido: {retorno_str!r}. "
+                f"Esperado HH:MM:SS. Esta pausa não terá retorno automático.")
+            proximo_retorno = None
+        else:
+            h_r, m_r, s_r = horario_retorno
             proximo_retorno = datetime.now().replace(hour=h_r, minute=m_r, second=s_r, microsecond=0)
             if proximo_retorno <= datetime.now():
                 proximo_retorno += timedelta(days=1)
-        except Exception:
-            proximo_retorno = None
 
     _recalcular_retorno()
 
@@ -1615,7 +1633,10 @@ def horario_de_rerun():
             ultimos_dias_vistos = global_rerun_dias
             
             try:
-                h, m, s = map(int, ultimo_horario_visto.split(":"))
+                horario_rerun = converter_hhmmss_tupla(ultimo_horario_visto)
+                if horario_rerun is None:
+                    raise ValueError(f"horário inválido (esperado HH:MM:SS): {ultimo_horario_visto!r}")
+                h, m, s = horario_rerun
                 agora = datetime.now()
                 momento_final = (agora + timedelta(days=ultimos_dias_vistos)).replace(hour=h, minute=m, second=s, microsecond=0)
                 
