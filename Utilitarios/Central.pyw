@@ -54,6 +54,10 @@ CAMPOS = [
     ("Agendamentos", "chatty", "Chatty", "tempo"),
     ("Agendamentos", "obs64studio", "OBS 64 Studio", "tempo"),
     ("Agendamentos", "minimizar_janelas", "Minimizar janelas", "tempo"),
+    ("Tempos", "duracao_entrada", "Entrada (00:00:09)", "tempo"),
+    ("Tempos", "duracao_inicio",  "Inicio (00:07:05)",  "tempo"),
+    ("Tempos", "duracao_raid",    "RAID (00:11:10)",    "tempo"),
+    ("Tempos", "duracao_final",   "FINAL (00:05:10)",   "tempo"),
 ]
 
 COR_FUNDO_INVALIDA = "#5a1b1b"
@@ -173,6 +177,7 @@ class CentralApp:
                         "obs64studio", "minimizar_janelas"]),
              ("SISTEMA / OBS", ["conectar_obs", "start_sistema", "retornar_midias", "iniciar_midias"])],
         )
+        self._montar_aba_formulario("Tempos")
 
         self.status = ctk.CTkLabel(self.raiz, text="Aguardando...", text_color=COR_NEUTRA)
         self.status.pack(side="bottom", fill="x", padx=12, pady=(4, 8))

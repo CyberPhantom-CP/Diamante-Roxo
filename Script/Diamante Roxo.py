@@ -143,6 +143,10 @@ global_modo_conteudo = "filmes"
 global_modo_destino = "filmes"
 global_modo_raid = "final"
 global_saida_rerun = "final"
+global_duracao_entrada = "00:00:09"
+global_duracao_inicio  = "00:07:05"
+global_duracao_raid    = "00:11:10"
+global_duracao_final   = "00:05:10"
 global_oraculo_ativado = False
 global_pausa_apos_filmes = 0
 global_pausa_retorno = "05:00:00"
@@ -1044,6 +1048,7 @@ def carregar_censuras_do_filme(indice_filme):
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
     global midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
+    global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao
     decorrido_total = midia_decorrido_global if is_midia else 0.0
     inicio = time.time()
     inicio_linha = time.strftime("%H:%M")  # Fixo: horario que esta secao comecou
@@ -1167,6 +1172,26 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
         # 1.0s entre deteccoes: metade das chamadas ao OBS por hora de filme,
         # sem atrasar deteccao de skip/censura (o trigger e abrupto, pega na proxima)
         time.sleep(1.0)
+        if not is_midia:
+            try:
+                if os.path.getmtime(painel_geral) != ultima_modificacao:
+                    try:
+                        config = {}
+                        with open(painel_geral, "r", encoding="utf-8") as f:
+                            for linha in f:
+                                linha = linha.strip()
+                                if linha and "=" in linha and not linha.startswith("#") and not linha.startswith("="):
+                                    chave, valor = linha.split("=", 1)
+                                    config[chave.strip()] = valor.strip()
+                        global_duracao_entrada = config.get("duracao_entrada", global_duracao_entrada).strip()
+                        global_duracao_inicio  = config.get("duracao_inicio",  global_duracao_inicio).strip()
+                        global_duracao_raid    = config.get("duracao_raid",    global_duracao_raid).strip()
+                        global_duracao_final   = config.get("duracao_final",   global_duracao_final).strip()
+                        ultima_modificacao = os.path.getmtime(painel_geral)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
 
     # === LIMPEZA DE SEGURANÇA (CENSURA) ===
     if is_midia and lista_censuras:
@@ -1215,7 +1240,7 @@ def aba_entrada():
     cena = "ENTRADA"
 
     trocar_cena(cena)
-    if esperar("00:00:09", cena) == "pular":
+    if esperar(global_duracao_entrada, cena) == "pular":
         print()
         log("Cena ENTRADA mudada manualmente.")
         rotear_pulo()
@@ -1225,7 +1250,7 @@ def aba_entrada():
 def aba_inicio():
     cena = "INÍCIO"
     trocar_cena(cena)
-    if esperar("00:07:05", cena) == "pular":
+    if esperar(global_duracao_inicio, cena) == "pular":
         print()
         log("Cena INÍCIO mudada manualmente.")
         rotear_pulo()
@@ -1729,7 +1754,7 @@ def aba_rerun():
 def aba_raid():
     cena = "RAID"
     trocar_cena(cena)
-    if esperar("00:11:10", cena) == "pular":
+    if esperar(global_duracao_raid, cena) == "pular":
         print()
         log("Cena RAID mudada manualmente.")
         rotear_pulo()
@@ -1742,7 +1767,7 @@ def aba_raid():
 def aba_final():
     cena = "FINAL"
     trocar_cena(cena)
-    if esperar("00:05:10", cena) == "pular":
+    if esperar(global_duracao_final, cena) == "pular":
         print()
         log("Cena FINAL mudada manualmente.")
         rotear_pulo()
@@ -1884,6 +1909,10 @@ def verificar_agendamento():
         global_pausa_apos_filmes = int(config.get("pausa_apos_filmes", 0))
         global_pausa_retorno = config.get("pausa_retorno", "05:00:00")
         global_oraculo_retorno = config.get("oraculo_retorno", "05:00:00")
+        global_duracao_entrada = config.get("duracao_entrada", "00:00:09").strip()
+        global_duracao_inicio  = config.get("duracao_inicio",  "00:07:05").strip()
+        global_duracao_raid    = config.get("duracao_raid",    "00:11:10").strip()
+        global_duracao_final   = config.get("duracao_final",   "00:05:10").strip()
 
         # == Programas & Minimização (selecionados por plataforma) ==
         # CORREÇÃO: campo vazio no painel usava "00:00:00" como padrão e agendava
