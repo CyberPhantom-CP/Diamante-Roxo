@@ -34,6 +34,7 @@ print("Carregando módulos...")
 # === Biblioteca Padrão ===
 import atexit
 import glob
+import math
 import os
 import signal
 import subprocess
@@ -1157,10 +1158,16 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 resultado_final = "pausa_quantidade"
                 break
 
-        mins, secs = divmod(restante, 60)
+        # Exibicao arredonda pra cima: digitou 00:05:05, comeca mostrando
+        # 00:05:05 (e nao 00:05:04). O 'restante' logico la em cima continua no
+        # piso pra nao mexer nos cortes do oraculo/pausa, e o horario REAL de fim
+        # nao muda (o break segue sendo decorrido >= segundos) — muda so o numero
+        # da ultima tela: 00:00:01 em vez de 00:00:00.
+        restante_exib = math.ceil(segundos - decorrido)
+        mins, secs = divmod(restante_exib, 60)
         horas, mins = divmod(mins, 60)
         agora_dt = datetime.now()
-        fim_dt = agora_dt + timedelta(seconds=restante)
+        fim_dt = agora_dt + timedelta(seconds=restante_exib)
         fim_str = fim_dt.strftime("%H:%M")
         estado = "Pausado" if (event_client and event_client.resgate_em_andamento) else "Rodando"
         corte = "Sim" if proximo_recusado else "Nao"
@@ -1207,8 +1214,14 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         valor_tempo = config.get(chave_tempo, "").strip()
                         novo_segundos = converter_hhmmss(valor_tempo)
                         if novo_segundos is not None and novo_segundos > 0 and novo_segundos != segundos:
-                            log(f"Tempo {cena_esperada} alterado em cena: {segundos}s -> {valor_tempo}")
+                            log(f"Tempo {cena_esperada} alterado em cena: {segundos}s -> {valor_tempo} "
+                                "(contagem reiniciada)")
                             segundos = novo_segundos
+                            # Zera o que ja correu: o cronometro volta pro valor
+                            # digitado (decorrido = decorrido_total + agora - inicio;
+                            # com decorrido_total = 0 em cena nao-midia, recalcular
+                            # a partir de 'inicio = agora' zera o decorrido).
+                            inicio = time.time()
 
                     ultima_modificacao_tempos = mtempo
             except Exception:
