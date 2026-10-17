@@ -177,6 +177,7 @@ class TempoSpin(ctk.CTkFrame):
         for spin in (self.spin_h, self.spin_m, self.spin_s):
             spin.configure(command=self._mudou)
             spin.bind("<FocusOut>", self._mudou)
+            spin.bind("<Return>", self._mudou)   # Enter tambem confirma (igual aos campos normais)
         self.set("00:00:00")
 
     def _ler(self, spin, maximo):
