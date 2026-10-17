@@ -14,7 +14,7 @@ executar_sistema = no
 
 ======================== MODO DE OPERACAO ========================
 
-# live (transmitir) ou gravar (gravar local)
+# live (transmitir), gravar/record/gravação (gravar local) ou teste
 modo_sistema   = live
 
 # twitch (todos os apps) ou kick (so OBS + Streamer.bot)
