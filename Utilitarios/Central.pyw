@@ -2,6 +2,7 @@ import ctypes
 import os
 import re
 import sys
+import tkinter as tk
 import customtkinter as ctk
 
 ctk.set_appearance_mode("dark")
@@ -16,6 +17,7 @@ if len(sys.argv) > 1:
     CAMINHO_PAINEL = os.path.abspath(sys.argv[1])
 
 PADRAO_TEMPO = re.compile(r"^\d{2}:\d{2}:\d{2}$")
+
 
 OPCOES = {
     "modo_sistema": ["live", "gravar", "teste"],
@@ -142,6 +144,81 @@ def gravar_chave(caminho, chave, valor):
     return os.path.getmtime(caminho)
 
 
+class TempoSpin(ctk.CTkFrame):
+    """Seletor de tempo HH:MM:SS leve: 3 caixinhas nativas (setinhas OU digitacao)."""
+
+    def __init__(self, mestre, chave, ao_mudar=None, **kwargs):
+        super().__init__(mestre, fg_color=COR_FUNDO_PADRAO_ENTRY, corner_radius=6, **kwargs)
+        self.chave = chave
+        self._ao_mudar = ao_mudar
+        self._carregando = False
+
+        caixa = dict(width=3, font=("Consolas", 12), justify="center",
+                     bg="#2b2b2e", fg="#f0f0f0", readonlybackground="#2b2b2e",
+                     buttonbackground="#48484e",
+                     relief="flat", bd=0, highlightthickness=0,
+                     insertbackground="#f0f0f0", wrap=True)
+        separador = dict(bg=COR_FUNDO_PADRAO_ENTRY, fg="#f0f0f0", font=("Consolas", 12))
+
+        self.spin_h = tk.Spinbox(self, from_=0, to=23, **caixa)
+        self.spin_m = tk.Spinbox(self, from_=0, to=59, **caixa)
+        self.spin_s = tk.Spinbox(self, from_=0, to=59, **caixa)
+        for w in (self.spin_h, tk.Label(self, text=":", **separador), self.spin_m,
+                  tk.Label(self, text=":", **separador), self.spin_s):
+            w.pack(side="left", padx=1, pady=3)
+
+        for spin in (self.spin_h, self.spin_m, self.spin_s):
+            spin.configure(command=self._mudou)
+            spin.bind("<FocusOut>", self._mudou)
+        self.set("00:00:00")
+
+    def _ler(self, spin, maximo):
+        try:
+            v = int(str(spin.get()).strip() or 0)
+        except ValueError:
+            v = 0
+        return max(0, min(v, maximo))
+
+    def _escrever(self, spin, valor, maximo):
+        valor = max(0, min(int(valor), maximo))
+        if str(spin.get()).strip() != f"{valor:02d}":
+            spin.delete(0, "end")
+            spin.insert(0, f"{valor:02d}")
+
+    def _mudou(self, *_evento):
+        if self._carregando:
+            return
+        self._escrever(self.spin_h, self._ler(self.spin_h, 23), 23)
+        self._escrever(self.spin_m, self._ler(self.spin_m, 59), 59)
+        self._escrever(self.spin_s, self._ler(self.spin_s, 59), 59)
+        if self._ao_mudar:
+            self._ao_mudar()
+
+    def get(self):
+        return "{:02d}:{:02d}:{:02d}".format(
+            self._ler(self.spin_h, 23), self._ler(self.spin_m, 59), self._ler(self.spin_s, 59))
+
+    def set(self, valor):
+        self._carregando = True
+        try:
+            partes = [int(p) if str(p).strip().isdigit() else 0
+                      for p in str(valor).strip().split(":")]
+        except (ValueError, AttributeError):
+            partes = []
+        while len(partes) < 3:
+            partes.append(0)
+        self._escrever(self.spin_h, partes[0], 23)
+        self._escrever(self.spin_m, partes[1], 59)
+        self._escrever(self.spin_s, partes[2], 59)
+        self._carregando = False
+
+    def delete(self, *_args):
+        self.set("00:00:00")
+
+    def insert(self, *_args):
+        pass
+
+
 class CentralApp:
     def __init__(self, raiz):
         self.raiz = raiz
@@ -177,7 +254,7 @@ class CentralApp:
                         "obs64studio", "minimizar_janelas"]),
              ("SISTEMA / OBS", ["conectar_obs", "start_sistema", "retornar_midias", "iniciar_midias"])],
         )
-        self._montar_aba_formulario("Tempos")
+        self._montar_aba_tempos()
 
         self.status = ctk.CTkLabel(self.raiz, text="Aguardando...", text_color=COR_NEUTRA)
         self.status.pack(side="bottom", fill="x", padx=12, pady=(4, 8))
@@ -209,6 +286,9 @@ class CentralApp:
         if tipo in ("enum", "bool"):
             widget = ctk.CTkOptionMenu(mestre, values=OPCOES.get(chave, []), width=190)
             widget.configure(command=lambda v, c=chave: self._salvar_campo(c, "enum"))
+        elif tipo == "tempo":
+            widget = TempoSpin(mestre, chave,
+                               ao_mudar=lambda c=chave: self._salvar_campo(c, "tempo"))
         else:
             widget = ctk.CTkEntry(mestre, width=190)
             widget.bind("<FocusOut>", lambda e, c=chave, t=tipo: self._salvar_campo(c, t))
@@ -299,6 +379,8 @@ class CentralApp:
         self._status(f"Trava alterada: executar_sistema = {novo} (tempo real).", COR_OK)
 
     def _atualizar_controles_trava(self):
+        if not hasattr(self, 'lbl_trava') or not hasattr(self, 'btn_trava'):
+            return
         atual = self.valores.get("executar_sistema", "no").strip().lower()
         ativo = atual in ("yes", "sim", "true")
         if ativo:
@@ -320,6 +402,9 @@ class CentralApp:
                 if valor and valor not in widget.cget("values"):
                     widget.configure(values=[*widget.cget("values"), valor])
                 widget.set(valor)
+            elif tipo == "tempo":
+                widget.set(valor)
+                widget.configure(fg_color=self.fg_padrao[chave])
             else:
                 widget.delete(0, "end")
                 widget.insert(0, valor)
@@ -343,6 +428,35 @@ class CentralApp:
 
     def _status(self, texto, cor):
         self.status.configure(text=texto, text_color=cor)
+
+
+    def _montar_aba_tempos(self):
+        pagina = self.abts.add("Tempos")
+        pagina.grid_columnconfigure(1, weight=1)
+        ctk.CTkLabel(pagina, text="TEMPOS DE CENA (setinhas ou digitando)",
+                     font=ctk.CTkFont(size=13, weight="bold"), text_color="#6ab04c").grid(
+            row=0, column=0, columnspan=2, sticky="w", padx=14, pady=14)
+
+        campos_tempo = [
+            ("duracao_entrada", "ENTRADA  (09s)"),
+            ("duracao_inicio", "INICIO  (07:05)"),
+            ("duracao_raid", "RAID  (11:10)"),
+            ("duracao_final", "FINAL  (05:10)"),
+        ]
+        for idx, (chave, rotulo) in enumerate(campos_tempo):
+            ctk.CTkLabel(pagina, text=rotulo).grid(row=idx+1, column=0, sticky="w",
+                                                   padx=(14, 8), pady=8)
+            self._criar_campo(pagina, chave, "tempo").grid(row=idx+1, column=1, sticky="w",
+                                                           padx=(0, 14), pady=8)
+
+        ctk.CTkLabel(pagina,
+            text="Cada caixinha (HH / MM / SS) muda com as setinhas ou digitando. "
+                 "A alteracao e salva automaticamente no Painel.",
+            text_color="#888888", font=ctk.CTkFont(size=10)).grid(
+            row=6, column=0, columnspan=2, sticky="w", padx=14, pady=(20, 4))
+
+
+
 
 
 def _instancia_unica_disponivel():
@@ -377,6 +491,7 @@ def _focar_janela_existente():
         )
     except Exception:
         pass
+
 
 
 def main():

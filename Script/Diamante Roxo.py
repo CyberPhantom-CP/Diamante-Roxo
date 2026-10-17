@@ -147,6 +147,7 @@ global_duracao_entrada = "00:00:09"
 global_duracao_inicio  = "00:07:05"
 global_duracao_raid    = "00:11:10"
 global_duracao_final   = "00:05:10"
+ultima_modificacao_tempos = 0.0
 global_oraculo_ativado = False
 global_pausa_apos_filmes = 0
 global_pausa_retorno = "05:00:00"
@@ -1048,7 +1049,7 @@ def carregar_censuras_do_filme(indice_filme):
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
     global midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
-    global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao
+    global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
     inicio = time.time()
     inicio_linha = time.strftime("%H:%M")  # Fixo: horario que esta secao comecou
@@ -1172,24 +1173,39 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
         # 1.0s entre deteccoes: metade das chamadas ao OBS por hora de filme,
         # sem atrasar deteccao de skip/censura (o trigger e abrupto, pega na proxima)
         time.sleep(1.0)
+        
+        # --- Reload dos tempos de cena a cada 1s (fora de MIDIAS) ---
+        # Isso NÃO interfere no loop de censura/skip, apenas atualiza as variáveis
+        # se o painel foi alterado recentemente.
         if not is_midia:
             try:
-                if os.path.getmtime(painel_geral) != ultima_modificacao:
-                    try:
-                        config = {}
-                        with open(painel_geral, "r", encoding="utf-8") as f:
-                            for linha in f:
-                                linha = linha.strip()
-                                if linha and "=" in linha and not linha.startswith("#") and not linha.startswith("="):
-                                    chave, valor = linha.split("=", 1)
-                                    config[chave.strip()] = valor.strip()
-                        global_duracao_entrada = config.get("duracao_entrada", global_duracao_entrada).strip()
-                        global_duracao_inicio  = config.get("duracao_inicio",  global_duracao_inicio).strip()
-                        global_duracao_raid    = config.get("duracao_raid",    global_duracao_raid).strip()
-                        global_duracao_final   = config.get("duracao_final",   global_duracao_final).strip()
-                        ultima_modificacao = os.path.getmtime(painel_geral)
-                    except Exception:
-                        pass
+                mtempo = os.path.getmtime(painel_geral)
+                if mtempo != ultima_modificacao_tempos:
+                    config = {}
+                    with open(painel_geral, "r", encoding="utf-8") as f:
+                        for linha in f:
+                            linha = linha.strip()
+                            if linha and "=" in linha and not linha.startswith("#") and not linha.startswith("="):
+                                chave, valor = linha.split("=", 1)
+                                config[chave.strip()] = valor.strip()
+                    global_duracao_entrada = config.get("duracao_entrada", global_duracao_entrada).strip()
+                    global_duracao_inicio  = config.get("duracao_inicio",  global_duracao_inicio).strip()
+                    global_duracao_raid    = config.get("duracao_raid",    global_duracao_raid).strip()
+                    global_duracao_final   = config.get("duracao_final",   global_duracao_final).strip()
+
+                    # Aplica na hora na cena EM EXECUCAO (INICIO / RAID / FINAL).
+                    # ENTRADA e midias ficam fora de proposito.
+                    chave_tempo = {"INÍCIO": "duracao_inicio",
+                                   "RAID": "duracao_raid",
+                                   "FINAL": "duracao_final"}.get(cena_esperada)
+                    if chave_tempo:
+                        valor_tempo = config.get(chave_tempo, "").strip()
+                        novo_segundos = converter_hhmmss(valor_tempo)
+                        if novo_segundos is not None and novo_segundos > 0 and novo_segundos != segundos:
+                            log(f"Tempo {cena_esperada} alterado em cena: {segundos}s -> {valor_tempo}")
+                            segundos = novo_segundos
+
+                    ultima_modificacao_tempos = mtempo
             except Exception:
                 pass
 
@@ -1873,6 +1889,7 @@ def verificar_agendamento():
     global ultima_modificacao, global_obs_host, global_obs_port, global_obs_password, global_modo_sistema
     global global_plataforma, global_modo_conteudo, global_modo_destino, global_modo_raid, global_saida_rerun, global_rerun_dias, global_rerun_horario_final
     global global_oraculo_ativado, global_pausa_apos_filmes, global_pausa_retorno, global_oraculo_retorno
+    global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final
 
     try:
         modificacao_atual = os.path.getmtime(painel_geral)
