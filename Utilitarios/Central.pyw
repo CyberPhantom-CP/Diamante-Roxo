@@ -103,7 +103,7 @@ def _canonizar(chave, valor):
     v = valor.lower()
     if chave in ("executar_sistema", "oraculo_ativado"):
         return "yes" if v in ("yes", "sim", "true") else "no"
-    if chave == "modo_sistema" and v in ("record", "gravacao"):
+    if chave == "modo_sistema" and v in ("record", "gravacao", "gravação"):
         return "gravar"
     return valor
 
