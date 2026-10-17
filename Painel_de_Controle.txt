@@ -29,7 +29,7 @@ modo_raid      = final
 saida_rerun    = final
 
 rerun_dias          = 1
-rerun_horario_final = 00:19:59
+rerun_horario_final = 00:00:00
 
 # yes, sim ou true — corta filmes apos 23h para nao passar do horario
 oraculo_ativado = nao
@@ -38,10 +38,10 @@ oraculo_ativado = nao
 pausa_apos_filmes = 0
 
 # Horario de retorno da pausa por quantidade (usado com pausa_apos_filmes)
-pausa_retorno     = 18:45:00
+pausa_retorno     = 00:00:00
 
 # Horario de retorno da pausa noturna (oraculo, 23h)
-oraculo_retorno   = 05:00:00
+oraculo_retorno   = 00:00:00
 
 ======================= CONEXAO DO OBS ==========================
 
@@ -53,23 +53,23 @@ obs_password = SUA_SENHA_AQUI
 
 # == Software ==
 mixitup           = 00:00:00
-streamerbot       = 12:30:00
-kickerino         = 12:35:00
+streamerbot       = 00:00:00
+kickerino         = 00:00:00
 chatty            = 00:00:00
-obs64studio       = 12:40:00
-minimizar_janelas = 12:55:00
+obs64studio       = 00:00:00
+minimizar_janelas = 00:00:00
 
 # == Sistema ==
-conectar_obs    = 12:42:00
-start_sistema   = 12:59:51
-retornar_midias = 05:00:00
-iniciar_midias  = 05:00:00    # so usado se modo=estudo
+conectar_obs    = 00:00:00
+start_sistema   = 00:00:00
+retornar_midias = 00:00:00
+iniciar_midias  = 00:00:00    # so usado se modo=estudo
 
 ========================== TEMPOS DE CENAS ========================
 # Tempos (HH:MM:SS) usados nas cenas de transição/fim de transmissão
 # Podem ser alterados em tempo real pelo Central.pyw
 
-duracao_entrada = 00:00:09
-duracao_inicio  = 00:07:05
-duracao_raid    = 00:11:10
-duracao_final   = 00:05:10
+duracao_entrada = 00:00:00
+duracao_inicio  = 00:00:00
+duracao_raid    = 00:00:00
+duracao_final   = 00:00:00
