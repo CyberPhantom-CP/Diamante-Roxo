@@ -362,9 +362,10 @@ class CentralApp:
         self._status(f"Salvo: {chave} = {valor} (tempo real).", COR_OK)
         self._atualizar_controles_trava()
 
-    def _pintar(self, chave, tipo):
+    def _pintar(self, chave, tipo, texto=None):
         widget, _ = self.campos[chave]
-        texto = widget.get()
+        if texto is None:
+            texto = widget.get()
         if tipo == "enum":
             valido = _validar_enum(chave, texto)
         else:
@@ -411,11 +412,12 @@ class CentralApp:
                 widget.set(valor)
             elif tipo == "tempo":
                 widget.set(valor)
-                widget.configure(fg_color=self.fg_padrao[chave])
             else:
                 widget.delete(0, "end")
                 widget.insert(0, valor)
-                widget.configure(fg_color=self.fg_padrao[chave])
+            # Marca vermelho na hora se o valor BRUTO do .txt for invalido
+            # (ex.: tempo fora de faixa, que o TempoSpin clampa na tela).
+            self._pintar(chave, tipo, texto=valor)
         try:
             self._mtime_carregado = self._ultima_escrita = os.path.getmtime(CAMINHO_PAINEL)
         except OSError:

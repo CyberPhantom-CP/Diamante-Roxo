@@ -907,10 +907,15 @@ def start_sistema():
         client.start_record()
         print()
         log("Gravação sendo iniciada!")
-    else:
+    elif global_modo_sistema == "live":
         client.start_stream()
         print()
         log("Transmissão sendo iniciada!")
+    else:
+        print()
+        log(f"[ERRO] modo_sistema invalido: {global_modo_sistema!r}. "
+            "Use 'live' ou 'gravar'. Nada foi iniciado.")
+        return
 
     # Inicia o fluxo: id_live, thread de cenas, e começa pela ENTRADA (9s)
     iniciar_fluxo()
@@ -1835,10 +1840,19 @@ def stop_sistema():
             client.stop_record()
             print()
             log("Gravação encerrada!")
-        else:
+        elif global_modo_sistema == "live":
             client.stop_stream()
             print()
             log("Transmissão encerrada!")
+        else:
+            print()
+            log(f"[ERRO] modo_sistema invalido: {global_modo_sistema!r} ao parar. "
+                "Parando transmissao e gravacao por seguranca.")
+            for _parar in (client.stop_stream, client.stop_record):
+                try:
+                    _parar()
+                except Exception:
+                    pass
     except Exception as e:
         log(f"Erro ao parar transmissão/gravação: {e}")
     finally:
