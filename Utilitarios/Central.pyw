@@ -30,6 +30,12 @@ OPCOES = {
     "oraculo_ativado": ["yes", "no"],
 }
 
+# Valores aceitos mas NAO oferecidos no menu (uso manual no .txt).
+# Ex.: "teste" faz o mesmo que "gravar"; continua valido e nao fica vermelho.
+ACEITOS = {
+    "modo_sistema": ["teste"],
+}
+
 CAMPOS = [
     ("Modo", "modo_sistema", "Modo do sistema", "enum"),
     ("Modo", "plataforma", "Plataforma", "enum"),
@@ -89,7 +95,8 @@ def validar(tipo, texto):
 
 
 def _validar_enum(chave, texto):
-    return texto.strip() in OPCOES.get(chave, [texto.strip()])
+    v = texto.strip()
+    return v in OPCOES.get(chave, [v]) or v in ACEITOS.get(chave, [])
 
 
 def _canonizar(chave, valor):
