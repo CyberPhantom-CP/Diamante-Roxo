@@ -20,7 +20,7 @@ PADRAO_TEMPO = re.compile(r"^\d{2}:\d{2}:\d{2}$")
 
 
 OPCOES = {
-    "modo_sistema": ["live", "gravar", "teste"],
+    "modo_sistema": ["live", "gravar"],
     "plataforma": ["twitch", "kick"],
     "modo_conteudo": ["filmes", "rerun", "estudo"],
     "modo_destino": ["filmes", "rerun"],

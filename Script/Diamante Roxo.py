@@ -903,7 +903,7 @@ def start_sistema():
             return
 
     # Inicia transmissão/gravação no OBS
-    if global_modo_sistema in ["gravar", "gravação", "record", "teste"]:
+    if global_modo_sistema in ["gravar", "gravação", "record"]:
         client.start_record()
         print()
         log("Gravação sendo iniciada!")
@@ -1831,7 +1831,7 @@ def stop_sistema():
 
     try:
         _stopping_stream = True
-        if global_modo_sistema in ["gravar", "gravação", "record", "teste"]:
+        if global_modo_sistema in ["gravar", "gravação", "record"]:
             client.stop_record()
             print()
             log("Gravação encerrada!")
