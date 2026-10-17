@@ -60,6 +60,7 @@ Diamante-Roxo\
 ├── Script\
 │   └── Diamante Roxo.py             → script principal
 ├── Utilitarios\
+│   ├── Central.pyw                  → painel de controle da live (interface gráfica)
 │   ├── gerar_tempo.py               → extrai durações dos vídeos (gera tempo_duracao.txt)
 │   └── Gerar_Censuras.py            → captura cenas a censurar (gera controle_censura.txt)
 ├── DOCUMENTACAO_COMPLETA.md         → documentação técnica detalhada
