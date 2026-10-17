@@ -1,6 +1,5 @@
-# Logs das sessões
-Script/relatorio_*.log
-relatorio_*.log
+# Logs das sessões (qualquer .log, com ou sem acento no nome)
+*.log
 
 # Config com dados de execução (mantém o padrão limpo no repo)
 Painel_de_Controle.txt
