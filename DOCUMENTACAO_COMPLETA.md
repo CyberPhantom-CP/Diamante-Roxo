@@ -630,6 +630,7 @@ pip install schedule psutil pywinauto obsws_python
 
 ```
 TWITCH/
+├── Central.pyw
 ├── Painel_de_Controle.txt
 ├── tempo_duracao.txt
 ├── controle_censura.txt
