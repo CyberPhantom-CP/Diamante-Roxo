@@ -918,16 +918,11 @@ def start_sistema():
             "Use 'live' ou 'gravar'. Nada foi iniciado.")
         return
 
-    # Inicia o fluxo: id_live, thread de cenas, e começa pela ENTRADA (9s)
+    # Inicia o fluxo: thread de cenas, e começa pela ENTRADA (9s)
     iniciar_fluxo()
 
 def iniciar_fluxo():
     global sistema_em_andamento, global_modo_conteudo
-
-    if global_modo_conteudo == "rerun":
-        id_live("RERUN")
-    else:
-        id_live("REACT")
 
     sistema_em_andamento = True
     threading.Thread(target=aba_geral, daemon=True).start()
@@ -1894,11 +1889,6 @@ def iniciar_midias_direto():
     log(f"Gatilho de MÍDIAS acionado! Transição para modo {global_modo_destino}...")
 
     global_modo_conteudo = global_modo_destino
-
-    if global_modo_conteudo == "rerun":
-        id_live("RERUN")
-    else:
-        id_live("REACT")
 
     cena_atual = cena_ativa_obs()
     if cena_atual != "MÍDIAS":
