@@ -1332,17 +1332,19 @@ def id_sessao(novo_texto):
         print()
         log(f"Erro ao atualizar {nome_fonte}: {e}")
 
-def id_live(texto_aviso):
-    try:
-        nome_fonte = "ID LIVE"
-
-        client.set_input_settings(nome_fonte, {'text': texto_aviso}, True)
-        print()
-        log(f"ID LIVE atualizado para: {texto_aviso}")
-
-    except Exception as e:
-        print()
-        log(f"Erro ao atualizar {nome_fonte}: {e}")
+# def id_live(texto_aviso):
+#     """Mantida para uso futuro — removia o título da live (REACT/RERUN) na fonte ID LIVE.
+#     Desativada: o texto fixo 'CHAT' agora é configurado direto no OBS e não deve ser sobrescrito."""
+#     try:
+#         nome_fonte = "ID LIVE"
+#
+#         client.set_input_settings(nome_fonte, {'text': texto_aviso}, True)
+#         print()
+#         log(f"ID LIVE atualizado para: {texto_aviso}")
+#
+#     except Exception as e:
+#         print()
+#         log(f"Erro ao atualizar {nome_fonte}: {e}")
 
 def aba_midias():
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, event_client

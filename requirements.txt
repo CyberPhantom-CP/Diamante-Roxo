@@ -1,0 +1,16 @@
+# Diamante Roxo v5.1 — Dependências
+# Testado com Python 3.10+ (atual 3.13)
+
+# Script principal (Script/Diamante Roxo.py)
+psutil>=5.9.0
+schedule>=1.2.0
+obsws-python>=1.5.0
+pywinauto>=0.6.8
+
+# Central.pyw (Utilitarios/Central.pyw)
+customtkinter>=5.2.0
+
+# Gerar_Censuras.py (Utilitarios/Gerar_Censuras.py)
+keyboard>=0.13.5
+
+# gerar_tempo.py usa ffprobe (FFmpeg) — binário externo, não pip

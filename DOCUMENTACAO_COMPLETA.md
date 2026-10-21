@@ -445,7 +445,6 @@ Gerado automaticamente na pasta `Script` com timestamps:
 | `limpar_cache_vis()` | Limpa cache de scene items |
 | `visibilidade_fonte(cena, fonte, visivel)` | Liga/desliga fonte (com cache + suporte a grupos) |
 | `id_sessao(texto)` | Atualiza texto SESSÃO ID |
-| `id_live(texto)` | Atualiza texto ID LIVE |
 
 ### 9.4. Cenas (Fluxo Principal)
 
@@ -478,7 +477,7 @@ Gerado automaticamente na pasta `Script` com timestamps:
 | Função | Descrição |
 |---|---|
 | `start_sistema()` | Conecta OBS + inicia stream/record |
-| `iniciar_fluxo()` | Marca ID LIVE + dispara aba_geral em thread |
+| `iniciar_fluxo()` | Dispara aba_geral em thread (sistema já conectado ao OBS) |
 | `resetar_fluxo()` | Reinicia o fluxo |
 | `stop_sistema()` | Para stream/record + encerra (usa `_travar_painel_seguranca`) |
 | `verificar_agendamento()` | Monitora Painel_de_Controle.txt + agenda tarefas (condiciona `iniciar_midias` / `start_sistema` conforme `modo_conteudo`) |

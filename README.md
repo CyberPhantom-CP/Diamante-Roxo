@@ -1,7 +1,7 @@
 # Diamante Roxo
 
 ![Versão](https://img.shields.io/badge/vers%C3%A3o-v5.1-7b2cbf)
-![Python](https://img.shields.io/badge/Python-3.14-7b2cbf)
+![Python](https://img.shields.io/badge/Python-3.10%2B-7b2cbf)
 ![Status](https://img.shields.io/badge/status-em%20uso-7b2cbf)
 
 Sistema de automação para transmissão ao vivo (lives), gerenciando cenas, áudio, alertas e transições no **OBS Studio**.
@@ -45,7 +45,7 @@ Projeto pessoal de uso contínuo em lives reais. Configuração 100% por arquivo
 - **Pausa por quantidade** de filmes, com retorno automático
 - **Retornos independentes** para pausa noturna e pausa por quantidade
 - **Detecção de queda de stream**: pausa o filme e retoma após 3s de estabilidade
-- **Fontes de texto dinâmicas** no OBS (ID LIVE, SESSÃO ID)
+- **Fontes de texto dinâmicas** no OBS (SESSÃO ID)
 - **Log diário** completo de todas as ações
 - Ajuste automático de prioridade do processo
 - Transmissão **direta** para a Kick (sem relay FFmpeg)
@@ -89,8 +89,8 @@ Os dois utilitários preenchem os arquivos de texto da raiz do projeto:
 
 | Script | Gera | Observação |
 |---|---|---|
-| `Utilitarios/gerar_tempo.py` | `tempo_duracao.txt` | Extrai a duração dos vídeos com `ffprobe`. Escreve o cabeçalho comentado no padrão do `controle_censura.txt` e **preserva** os comentários que você adicionar. Na opção "2" (dia novo), também reseta `controle_censura.txt` com uma linha `False | ` por sessão. |
-| `Utilitarios/Gerar_Censuras.py` | `controle_censura.txt` | Captura as cenas a censurar. Requer `keyboard` e a Interface Web do MPC-BE na porta 13579. |
+| `Utilitarios/gerar_tempo.py` | `tempo_duracao.txt` | Extrai a duração dos vídeos com `ffprobe` (**requer FFmpeg no PATH**). Escreve o cabeçalho comentado no padrão do `controle_censura.txt` e **preserva** os comentários que você adicionar. Na opção "2" (dia novo), também reseta `controle_censura.txt` com uma linha `False | ` por sessão. |
+| `Utilitarios/Gerar_Censuras.py` | `controle_censura.txt` | Captura as cenas a censurar. Requer `keyboard` e a Interface Web do **MPC-BE** na porta 13579 (Ver opções → Player → Interface Web). |
 
 Ambos usam caminho hardcoded: preencha a constante `PASTA_*` no topo antes de executar.
 
@@ -99,9 +99,11 @@ Ambos usam caminho hardcoded: preencha a constante `PASTA_*` no topo antes de ex
 ## Requisitos
 
 - Windows (utiliza `pywinauto`, `psutil` e `schedule`)
-- Python 3.14 (testado nesta versão; códigos 3.10+ funcionam)
-- OBS Studio com WebSocket habilitado (porta [PORTA])
+- Python 3.10+ (testado no 3.13)
+- OBS Studio com WebSocket habilitado (porta padrão 4455)
 - Streamer.bot / Mix It Up / Chatty / Kickerino (conforme a plataforma)
+- **FFmpeg** (para `ffprobe` no `gerar_tempo.py`)
+- **MPC-BE** com Interface Web ativa na porta 13579 (para `Gerar_Censuras.py`)
 - Conexão de rede estável para transmitir direto na Kick
 
 ## Licença
