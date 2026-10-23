@@ -153,6 +153,7 @@ global_oraculo_ativado = False
 global_pausa_apos_filmes = 0
 global_pausa_retorno = "05:00:00"
 global_oraculo_retorno = "05:00:00"
+global_encerrar_apos_filmes = 0
 
 # === Sistema do Rerun ===
 global_rerun_dias = 1
@@ -1499,6 +1500,18 @@ def aba_midias():
         midia_idx_global += 1
         midia_decorrido_global = 0.0
 
+        # --- Encerramento por quantidade de filmes (fim natural) ---
+        if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
+            print()
+            log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
+            visibilidade_fonte(cena, "SESSÃO ID", False)
+            # Zera contadores pra não retomar errado no RAID
+            midia_idx_global = 0
+            midia_decorrido_global = 0.0
+            timeline_vlc_global = -1
+            aba_raid()  # segue fluxo normal: RAID -> FINAL -> stop_sistema
+            return
+
         if i < total - 1:
             skip_videos(fonte_vlc)
             time.sleep(2)
@@ -1945,6 +1958,7 @@ def verificar_agendamento():
         global_pausa_apos_filmes = int(config.get("pausa_apos_filmes", 0))
         global_pausa_retorno = config.get("pausa_retorno", "05:00:00")
         global_oraculo_retorno = config.get("oraculo_retorno", "05:00:00")
+        global_encerrar_apos_filmes = int(config.get("encerrar_apos_filmes", 0))
         global_duracao_entrada = config.get("duracao_entrada", "00:00:09").strip()
         global_duracao_inicio  = config.get("duracao_inicio",  "00:07:05").strip()
         global_duracao_raid    = config.get("duracao_raid",    "00:11:10").strip()

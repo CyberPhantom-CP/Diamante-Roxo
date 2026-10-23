@@ -41,6 +41,9 @@ oraculo_ativado = nao
 # Pausa por quantidade de filmes (0 = desativado). Ex: 2 = pausa apos o 2o filme
 pausa_apos_filmes = 0
 
+# Encerramento direto apos N filmes (0 = desativado). Ex: 3 = encerra apos 3o filme
+encerrar_apos_filmes = 0
+
 # Horario de retorno da pausa por quantidade (usado com pausa_apos_filmes)
 pausa_retorno     = 00:00:00
 

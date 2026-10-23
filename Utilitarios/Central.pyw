@@ -49,6 +49,7 @@ CAMPOS = [
     ("Pausa", "pausa_apos_filmes", "Pausa apos N filmes (0 = off)", "int"),
     ("Pausa", "pausa_retorno", "Retorno da pausa", "tempo"),
     ("Pausa", "oraculo_retorno", "Retorno do oraculo", "tempo"),
+    ("Pausa", "encerrar_apos_filmes", "Encerrar apos N filmes (0 = off)", "int"),
     ("OBS", "obs_host", "Host", "host"),
     ("OBS", "obs_port", "Porta", "port"),
     ("OBS", "obs_password", "Senha", "senha"),
@@ -252,7 +253,7 @@ class CentralApp:
         self._montar_aba_formulario("Modo")
         self._montar_aba_grupos(
             "Pausa",
-            [("PAUSA POR QUANTIDADE", ["pausa_apos_filmes", "oraculo_ativado"]),
+            [("PAUSA POR QUANTIDADE", ["pausa_apos_filmes", "oraculo_ativado", "encerrar_apos_filmes"]),
              ("HORARIOS DE RETORNO", ["pausa_retorno", "oraculo_retorno"])],
         )
         self._montar_aba_formulario("OBS")
