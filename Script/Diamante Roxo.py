@@ -1170,7 +1170,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             estado = "Pausado" if (event_client and event_client.resgate_em_andamento) else "Rodando"
             corte = "Sim" if proximo_recusado else "Nao"
             # \r no início garante posicionamento correto mesmo após outros logs
-            print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Corte: {corte} | {estado} | Fim: {fim_str}               ", end="", flush=True)
+            print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Corte: {corte} | {estado} | Fim: {fim_str}   ", end="", flush=True)
         
         try:
             if cena_ativa_obs() != cena_esperada:
@@ -1432,7 +1432,9 @@ def aba_midias():
             log(f"Retomando SESSÃO {i+1:02d} do segundo {int(midia_decorrido_global)}...")
         else:
             print()
-            log(f"Filme {i+1}/{total} - Duração sem créditos: {tempo_total}")
+            # Calcula total efetivo respeitando encerrar_apos_filmes
+            total_efetivo = global_encerrar_apos_filmes if global_encerrar_apos_filmes > 0 else total
+            log(f"Filme {i+1}/{total_efetivo} - Duração sem créditos: {tempo_total}")
 
         # === CARREGA AS REGRAS DE CENSURA DO FILME ATUAL ===
         lista_censuras = carregar_censuras_do_filme(i)
@@ -1779,7 +1781,7 @@ def horario_de_rerun():
             mins, secs = divmod(restante_seg, 60)
             horas, mins = divmod(mins, 60)
             
-            print(f"{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Encerramento: {data_formatada}               ", end="\r", flush=True)
+            print(f"{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Encerramento: {data_formatada}   ", end="\r", flush=True)
         
         # 1s entre atualizacoes do relogio: o display muda a cada segundo mesmo, 0.5s so repetia o valor
         time.sleep(1)
