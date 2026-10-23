@@ -76,15 +76,14 @@ caminho_log   = os.path.join(pasta_sistema, nome_ficheiro)
 
 def log(msg):
     horario = time.strftime("%H:%M:%S")
-    # \r no início garante volta ao início da linha; espaços no final limpam resíduo
-    print(f"\r{horario} - {msg}")
+    print(f"{horario} - {msg}", flush=True)
     
     try:
         with open(caminho_log, "a", encoding="utf-8") as f:
             horario_full = time.strftime("%Y-%m-%d %H-%M-%S")
             f.write(f"{horario_full} - INFO - {msg}\n")
     except Exception as e:
-        print(f"\r{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}")
+        print(f"{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}", flush=True)
 
 log("Inicializando o Diamante Roxo...")
 
@@ -1051,7 +1050,7 @@ def carregar_censuras_do_filme(indice_filme):
     return lista_censuras
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
-    global midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
+    global midia_idx_global, midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
     inicio = time.time()
@@ -1171,7 +1170,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             estado = "Pausado" if (event_client and event_client.resgate_em_andamento) else "Rodando"
             corte = "Sim" if proximo_recusado else "Nao"
             # \r no início garante posicionamento correto mesmo após outros logs
-            print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Corte: {corte} | {estado} | Fim: {fim_str}               ", end="")
+            print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Corte: {corte} | {estado} | Fim: {fim_str}               ", end="", flush=True)
         
         try:
             if cena_ativa_obs() != cena_esperada:
@@ -1352,7 +1351,7 @@ def id_sessao(novo_texto):
 #         log(f"Erro ao atualizar {nome_fonte}: {e}")
 
 def aba_midias():
-    global midia_idx_global, midia_decorrido_global, timeline_vlc_global, event_client
+    global midia_idx_global, midia_decorrido_global, timeline_vlc_global, event_client, global_encerrar_apos_filmes
     cena = "MÍDIAS"
     fonte_vlc = "FILMES"
 
@@ -1770,7 +1769,7 @@ def horario_de_rerun():
             mins, secs = divmod(restante_seg, 60)
             horas, mins = divmod(mins, 60)
             
-            print(f"{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Encerramento: {data_formatada}               ", end="\r")
+            print(f"{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Encerramento: {data_formatada}               ", end="\r", flush=True)
         
         # 1s entre atualizacoes do relogio: o display muda a cada segundo mesmo, 0.5s so repetia o valor
         time.sleep(1)
