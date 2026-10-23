@@ -2057,19 +2057,29 @@ def _ao_parar():
     try:
         if client:
             _stopping_stream = True
-            client.stop_stream()
-            client.stop_record()
-            log("[SISTEMA] Transmissao encerrada.")
-    except Exception:
-        pass
+            # Para gravação se estiver rodando
+            try:
+                client.stop_record()
+                log("[SISTEMA] Gravacao encerrada via stop_record().")
+            except Exception as e:
+                log(f"[AVISO] Falha ao parar gravacao: {e}")
+            # Para transmissão se estiver rodando
+            try:
+                client.stop_stream()
+                log("[SISTEMA] Transmissao encerrada via stop_stream().")
+            except Exception as e:
+                log(f"[AVISO] Falha ao parar transmissao: {e}")
+            log("[SISTEMA] Comandos de parada enviados ao OBS.")
+    except Exception as e:
+        log(f"[ERRO] Erro ao enviar comandos de parada: {e}")
     finally:
         _stopping_stream = False
     try:
         if event_client:
             event_client.disconnect()
             log("[SISTEMA] Eventos desconectados.")
-    except Exception:
-        pass
+    except Exception as e:
+        log(f"[AVISO] Erro ao desconectar eventos: {e}")
 
     _travar_painel_seguranca()
 
@@ -2078,6 +2088,13 @@ def _ao_parar():
 atexit.register(_ao_parar)
 
 def _sinal_parar(_s, _f):
+    log("[SINAL] SIGINT recebido (Ctrl+C). Iniciando encerramento...")
+    # Chama o handler de saída diretamente para garantir limpeza
+    try:
+        _ao_parar()
+    except Exception as e:
+        log(f"[ERRO] Erro durante encerramento: {e}")
+    # Força saída após limpeza
     sys.exit(0)
 
 signal.signal(signal.SIGINT, _sinal_parar)
