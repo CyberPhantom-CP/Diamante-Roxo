@@ -76,6 +76,7 @@ caminho_log   = os.path.join(pasta_sistema, nome_ficheiro)
 
 def log(msg):
     horario = time.strftime("%H:%M:%S")
+    # \r no início garante volta ao início da linha; espaços no final limpam resíduo
     print(f"\r{horario} - {msg}")
     
     try:
@@ -83,7 +84,7 @@ def log(msg):
             horario_full = time.strftime("%Y-%m-%d %H-%M-%S")
             f.write(f"{horario_full} - INFO - {msg}\n")
     except Exception as e:
-        print(f"{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}")
+        print(f"\r{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}")
 
 log("Inicializando o Diamante Roxo...")
 
@@ -1154,20 +1155,23 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 resultado_final = "pausa_quantidade"
                 break
 
-        # Exibicao arredonda pra cima: digitou 00:05:05, comeca mostrando
-        # 00:05:05 (e nao 00:05:04). O 'restante' logico la em cima continua no
-        # piso pra nao mexer nos cortes do oraculo/pausa, e o horario REAL de fim
-        # nao muda (o break segue sendo decorrido >= segundos) — muda so o numero
-        # da ultima tela: 00:00:01 em vez de 00:00:00.
-        restante_exib = math.ceil(segundos - decorrido)
-        mins, secs = divmod(restante_exib, 60)
-        horas, mins = divmod(mins, 60)
-        agora_dt = datetime.now()
-        fim_dt = agora_dt + timedelta(seconds=restante_exib)
-        fim_str = fim_dt.strftime("%H:%M")
-        estado = "Pausado" if (event_client and event_client.resgate_em_andamento) else "Rodando"
-        corte = "Sim" if proximo_recusado else "Nao"
-        print(f"{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Corte: {corte} | {estado} | Fim: {fim_str}               ", end="\r")
+        # ENTRADA é curta (9s) — não mostra countdown, só a mensagem inicial
+        if cena_esperada != "ENTRADA":
+            # Exibicao arredonda pra cima: digitou 00:05:05, comeca mostrando
+            # 00:05:05 (e nao 00:05:04). O 'restante' logico la em cima continua no
+            # piso pra nao mexer nos cortes do oraculo/pausa, e o horario REAL de fim
+            # nao muda (o break segue sendo decorrido >= segundos) — muda so o numero
+            # da ultima tela: 00:00:01 em vez de 00:00:00.
+            restante_exib = math.ceil(segundos - decorrido)
+            mins, secs = divmod(restante_exib, 60)
+            horas, mins = divmod(mins, 60)
+            agora_dt = datetime.now()
+            fim_dt = agora_dt + timedelta(seconds=restante_exib)
+            fim_str = fim_dt.strftime("%H:%M")
+            estado = "Pausado" if (event_client and event_client.resgate_em_andamento) else "Rodando"
+            corte = "Sim" if proximo_recusado else "Nao"
+            # \r no início garante posicionamento correto mesmo após outros logs
+            print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Corte: {corte} | {estado} | Fim: {fim_str}               ", end="")
         
         try:
             if cena_ativa_obs() != cena_esperada:
