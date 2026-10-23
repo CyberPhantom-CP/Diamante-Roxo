@@ -1437,6 +1437,22 @@ def aba_midias():
         # === CARREGA AS REGRAS DE CENSURA DO FILME ATUAL ===
         lista_censuras = carregar_censuras_do_filme(i)
 
+        # --- Reload de encerrar_apos_filmes do painel (pode ter mudado durante a live) ---
+        try:
+            mtempo = os.path.getmtime(painel_geral)
+            if mtempo != ultima_modificacao_tempos:
+                config = {}
+                with open(painel_geral, "r", encoding="utf-8") as f:
+                    for linha in f:
+                        linha = linha.strip()
+                        if linha and "=" in linha and not linha.startswith("#") and not linha.startswith("="):
+                            chave, valor = linha.split("=", 1)
+                            config[chave.strip()] = valor.strip()
+                global_encerrar_apos_filmes = int(config.get("encerrar_apos_filmes", global_encerrar_apos_filmes))
+                ultima_modificacao_tempos = mtempo
+        except Exception:
+            pass
+
         resultado = esperar(tempo_total, cena, fonte_vlc,
             is_midia=True,
             duracao_proximo_seg=duracao_proximo_seg,
@@ -1862,7 +1878,7 @@ def _travar_painel_seguranca():
     RESETS = {
         "executar_sistema": "no",
         "pausa_apos_filmes": "0",
-        "encerrar_apos_filmes": "0",
+        # "encerrar_apos_filmes": "0",  # NÃO resetar: é configuração do usuário, não estado de runtime
         "rerun_dias": "1",
         "rerun_horario_final": "23:59:59",
         "pausa_retorno": "23:59:59",
