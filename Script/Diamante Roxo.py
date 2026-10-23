@@ -1488,6 +1488,7 @@ def aba_midias():
             # --- Encerramento por quantidade de filmes (também no skip) ---
             if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
                 print()
+                log(f"[DEBUG] encerrar_apos_filmes CHECK: midia_idx_global={midia_idx_global}, global_encerrar_apos_filmes={global_encerrar_apos_filmes} -> MATCH")
                 log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
                 visibilidade_fonte(cena, "SESSÃO ID", False)
                 midia_idx_global = 0
@@ -1495,6 +1496,8 @@ def aba_midias():
                 timeline_vlc_global = -1
                 aba_raid()
                 return
+            elif global_encerrar_apos_filmes > 0:
+                log(f"[DEBUG] encerrar_apos_filmes CHECK: midia_idx_global={midia_idx_global}, global_encerrar_apos_filmes={global_encerrar_apos_filmes} -> no match")
 
             if i < total - 1:
                 # == Pausa Noturna no Skip Manual ==
@@ -1518,6 +1521,7 @@ def aba_midias():
         # --- Encerramento por quantidade de filmes (fim natural) ---
         if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
             print()
+            log(f"[DEBUG] encerrar_apos_filmes CHECK (natural): midia_idx_global={midia_idx_global}, global_encerrar_apos_filmes={global_encerrar_apos_filmes} -> MATCH")
             log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
             visibilidade_fonte(cena, "SESSÃO ID", False)
             # Zera contadores pra não retomar errado no RAID
@@ -1526,6 +1530,8 @@ def aba_midias():
             timeline_vlc_global = -1
             aba_raid()  # segue fluxo normal: RAID -> FINAL -> stop_sistema
             return
+        elif global_encerrar_apos_filmes > 0:
+            log(f"[DEBUG] encerrar_apos_filmes CHECK (natural): midia_idx_global={midia_idx_global}, global_encerrar_apos_filmes={global_encerrar_apos_filmes} -> no match")
 
         if i < total - 1:
             skip_videos(fonte_vlc)
