@@ -1481,6 +1481,17 @@ def aba_midias():
             print()
             log(f"Cofre atualizado com sucesso: Avançando para SESSÃO {midia_idx_global+1:02d}.")
 
+            # --- Encerramento por quantidade de filmes (também no skip) ---
+            if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
+                print()
+                log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
+                visibilidade_fonte(cena, "SESSÃO ID", False)
+                midia_idx_global = 0
+                midia_decorrido_global = 0.0
+                timeline_vlc_global = -1
+                aba_raid()
+                return
+
             if i < total - 1:
                 # == Pausa Noturna no Skip Manual ==
                 hora_atual = int(time.strftime("%H"))
