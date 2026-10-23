@@ -1855,14 +1855,12 @@ def _travar_painel_seguranca():
     Reseta:
     - executar_sistema = no                (trava de segurança)
     - pausa_apos_filmes = 0                (pausa por quantidade)
+    - encerrar_apos_filmes = 0             (encerramento por quantidade)
     - rerun_dias = 1                       (padrão do rerun)
     - rerun_horario_final = 23:59:59       (padrão seguro: fim do dia)
     - pausa_retorno = 23:59:59             (padrão seguro: fim do dia)
     - oraculo_retorno = 23:59:59           (padrão seguro: fim do dia)
     - oraculo_ativado = nao                (padrão do oráculo)
-
-    NOTA: 'encerrar_apos_filmes' NÃO é resetado — é configuração do usuário,
-    não estado de runtime. Persiste entre execuções.
 
     CORREÇÃO: procura a linha pela CHAVE, não pelo texto exato do valor.
     Mantém formatação original (espaços, EOL).
@@ -1872,7 +1870,7 @@ def _travar_painel_seguranca():
     RESETS = {
         "executar_sistema": "no",
         "pausa_apos_filmes": "0",
-        # "encerrar_apos_filmes": "0",  # NÃO resetar: é configuração do usuário, não estado de runtime
+        "encerrar_apos_filmes": "0",
         "rerun_dias": "1",
         "rerun_horario_final": "23:59:59",
         "pausa_retorno": "23:59:59",
@@ -1968,7 +1966,7 @@ def iniciar_midias_direto():
 def verificar_agendamento():
     global ultima_modificacao, global_obs_host, global_obs_port, global_obs_password, global_modo_sistema
     global global_plataforma, global_modo_conteudo, global_modo_destino, global_modo_raid, global_saida_rerun, global_rerun_dias, global_rerun_horario_final
-    global global_oraculo_ativado, global_pausa_apos_filmes, global_pausa_retorno, global_oraculo_retorno
+    global global_oraculo_ativado, global_pausa_apos_filmes, global_pausa_retorno, global_oraculo_retorno, global_encerrar_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final
 
     try:
