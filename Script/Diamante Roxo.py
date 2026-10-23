@@ -1472,6 +1472,7 @@ def aba_midias():
         # === Skip manual detectado. Avança o índice e, se for entre 23h-06h, ativa pausa noturna. ===
         if resultado == "skip_detectado":
             print()
+            log("[ENTRY] Entered skip_detectado block")
             log("Skip manual detectado durante a reprodução. Pulando para próxima mídia...")
 
             # Reseta as memórias de tempo para o próximo filme começar do zero absoluto
@@ -1516,6 +1517,7 @@ def aba_midias():
         # === AVANÇO AUTOMÁTICO (Só roda se o filme terminar sozinho) ===
         midia_idx_global += 1
         midia_decorrido_global = 0.0
+        log("[ENTRY] Entered natural end block (AVANÇO AUTOMÁTICO)")
 
         # --- Encerramento por quantidade de filmes (fim natural) ---
         if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
