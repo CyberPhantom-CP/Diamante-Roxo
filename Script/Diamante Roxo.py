@@ -1819,37 +1819,52 @@ def aba_final():
     stop_sistema()
 
 def _travar_painel_seguranca():
-    """Reescreve o Painel de Controle: executar_sistema -> no, pausa_apos_filmes -> 0.
+    """Reescreve o Painel de Controle: reseta campos de uso único aos padrões.
     Compartilhada entre stop_sistema() e _ao_parar() (antes era código duplicado).
 
-    CORREÇÃO 1: a versão antiga fazia conteudo.replace("executar_sistema = yes", ...),
-    que só bate se o valor original for exatamente "yes" com um espaço de cada lado.
-    Como a leitura da trava aceita "sim"/"true" e qualquer espaçamento/maiúscula,
-    quem usasse "sim" ou "true" via o log dizer "trava ativada" sem a trava ter sido
-    reescrita de verdade. Agora procura a linha pela CHAVE (como já era feito pra
-    pausa_apos_filmes), não pelo texto exato do valor.
-    CORREÇÃO 2: stop_sistema() chamava isso sem try/except (só _ao_parar() tinha).
-    Se o arquivo estivesse bloqueado/ausente nesse instante, a thread do fluxo de
-    cenas morria calada. Agora as duas chamam esta função, que já tem o try/except.
+    Reseta:
+    - executar_sistema = no          (trava de segurança)
+    - pausa_apos_filmes = 0          (pausa por quantidade)
+    - encerrar_apos_filmes = 0       (encerramento por quantidade)
+    - rerun_dias = 1                 (padrão do rerun)
+    - rerun_horario_final = 00:00:00 (padrão do rerun)
+    - pausa_retorno = 00:00:00       (padrão de retorno)
+    - oraculo_retorno = 00:00:00     (padrão de retorno)
+    - oraculo_ativado = nao          (padrão do oráculo)
+
+    CORREÇÃO: procura a linha pela CHAVE, não pelo texto exato do valor.
+    Mantém formatação original (espaços, EOL).
     """
+    # Mapeamento: chave -> valor_padrão
+    RESETS = {
+        "executar_sistema": "no",
+        "pausa_apos_filmes": "0",
+        "encerrar_apos_filmes": "0",
+        "rerun_dias": "1",
+        "rerun_horario_final": "00:00:00",
+        "pausa_retorno": "00:00:00",
+        "oraculo_retorno": "00:00:00",
+        "oraculo_ativado": "nao",
+    }
+
     try:
         if not os.path.exists(painel_geral):
             return
         with open(painel_geral, "r", encoding="utf-8") as f:
             linhas = f.readlines()
 
+        resetados = []
         for idx, linha in enumerate(linhas):
             chave = linha.split("=", 1)[0].strip() if "=" in linha else ""
-            if chave == "executar_sistema":
-                linhas[idx] = f"executar_sistema = no{linha[len(linha.rstrip()):]}"
-            elif linha.strip().startswith("pausa_apos_filmes"):
-                linhas[idx] = f"pausa_apos_filmes = 0{linha[len(linha.rstrip()):]}"
+            if chave in RESETS:
+                linhas[idx] = f"{chave} = {RESETS[chave]}{linha[len(linha.rstrip()):]}"
+                resetados.append(chave)
 
         with open(painel_geral, "w", encoding="utf-8") as f:
             f.writelines(linhas)
 
-        log("[SEGURANCA] executar_sistema reescrito para 'no' no Painel de Controle.")
-        log("[SEGURANCA] pausa_apos_filmes reescrito para 0 no Painel de Controle.")
+        for chave in resetados:
+            log(f"[SEGURANCA] {chave} reescrito para '{RESETS[chave]}' no Painel de Controle.")
     except Exception as e:
         log(f"[SEGURANCA] Erro ao travar painel: {e}")
 
