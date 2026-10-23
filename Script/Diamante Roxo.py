@@ -1488,7 +1488,6 @@ def aba_midias():
         # === Skip manual detectado. Avança o índice e, se for entre 23h-06h, ativa pausa noturna. ===
         if resultado == "skip_detectado":
             print()
-            log("[ENTRY] Entered skip_detectado block")
             log("Skip manual detectado durante a reprodução. Pulando para próxima mídia...")
 
             # Reseta as memórias de tempo para o próximo filme começar do zero absoluto
@@ -1504,7 +1503,6 @@ def aba_midias():
             # --- Encerramento por quantidade de filmes (também no skip) ---
             if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
                 print()
-                log(f"[DEBUG] encerrar_apos_filmes CHECK: midia_idx_global={midia_idx_global}, global_encerrar_apos_filmes={global_encerrar_apos_filmes} -> MATCH")
                 log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
                 visibilidade_fonte(cena, "SESSÃO ID", False)
                 midia_idx_global = 0
@@ -1512,8 +1510,6 @@ def aba_midias():
                 timeline_vlc_global = -1
                 aba_raid()
                 return
-            elif global_encerrar_apos_filmes > 0:
-                log(f"[DEBUG] encerrar_apos_filmes CHECK: midia_idx_global={midia_idx_global}, global_encerrar_apos_filmes={global_encerrar_apos_filmes} -> no match")
 
             if i < total - 1:
                 # == Pausa Noturna no Skip Manual ==
@@ -1533,12 +1529,10 @@ def aba_midias():
         # === AVANÇO AUTOMÁTICO (Só roda se o filme terminar sozinho) ===
         midia_idx_global += 1
         midia_decorrido_global = 0.0
-        log("[ENTRY] Entered natural end block (AVANÇO AUTOMÁTICO)")
 
         # --- Encerramento por quantidade de filmes (fim natural) ---
         if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
             print()
-            log(f"[DEBUG] encerrar_apos_filmes CHECK (natural): midia_idx_global={midia_idx_global}, global_encerrar_apos_filmes={global_encerrar_apos_filmes} -> MATCH")
             log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
             visibilidade_fonte(cena, "SESSÃO ID", False)
             # Zera contadores pra não retomar errado no RAID
@@ -1547,8 +1541,6 @@ def aba_midias():
             timeline_vlc_global = -1
             aba_raid()  # segue fluxo normal: RAID -> FINAL -> stop_sistema
             return
-        elif global_encerrar_apos_filmes > 0:
-            log(f"[DEBUG] encerrar_apos_filmes CHECK (natural): midia_idx_global={midia_idx_global}, global_encerrar_apos_filmes={global_encerrar_apos_filmes} -> no match")
 
         if i < total - 1:
             skip_videos(fonte_vlc)
@@ -1863,12 +1855,14 @@ def _travar_painel_seguranca():
     Reseta:
     - executar_sistema = no                (trava de segurança)
     - pausa_apos_filmes = 0                (pausa por quantidade)
-    - encerrar_apos_filmes = 0             (encerramento por quantidade)
     - rerun_dias = 1                       (padrão do rerun)
     - rerun_horario_final = 23:59:59       (padrão seguro: fim do dia)
     - pausa_retorno = 23:59:59             (padrão seguro: fim do dia)
     - oraculo_retorno = 23:59:59           (padrão seguro: fim do dia)
     - oraculo_ativado = nao                (padrão do oráculo)
+
+    NOTA: 'encerrar_apos_filmes' NÃO é resetado — é configuração do usuário,
+    não estado de runtime. Persiste entre execuções.
 
     CORREÇÃO: procura a linha pela CHAVE, não pelo texto exato do valor.
     Mantém formatação original (espaços, EOL).
