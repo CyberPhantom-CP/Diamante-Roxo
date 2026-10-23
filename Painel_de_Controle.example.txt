@@ -33,7 +33,7 @@ modo_raid      = final
 saida_rerun    = final
 
 rerun_dias          = 1
-rerun_horario_final = 00:00:00
+rerun_horario_final = 23:59:59
 
 # yes, sim ou true — corta filmes apos 23h para nao passar do horario
 oraculo_ativado = nao
@@ -45,10 +45,12 @@ pausa_apos_filmes = 0
 encerrar_apos_filmes = 0
 
 # Horario de retorno da pausa por quantidade (usado com pausa_apos_filmes)
-pausa_retorno     = 00:00:00
+# 23:59:59 = desligado/seguro (não dispara à meia-noite)
+pausa_retorno     = 23:59:59
 
 # Horario de retorno da pausa noturna (oraculo, 23h)
-oraculo_retorno   = 00:00:00
+# 23:59:59 = desligado/seguro (não dispara à meia-noite)
+oraculo_retorno   = 23:59:59
 
 ======================= CONEXAO DO OBS ==========================
 

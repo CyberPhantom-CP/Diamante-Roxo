@@ -1823,17 +1823,18 @@ def _travar_painel_seguranca():
     Compartilhada entre stop_sistema() e _ao_parar() (antes era código duplicado).
 
     Reseta:
-    - executar_sistema = no          (trava de segurança)
-    - pausa_apos_filmes = 0          (pausa por quantidade)
-    - encerrar_apos_filmes = 0       (encerramento por quantidade)
-    - rerun_dias = 1                 (padrão do rerun)
-    - rerun_horario_final = 00:00:00 (padrão do rerun)
-    - pausa_retorno = 00:00:00       (padrão de retorno)
-    - oraculo_retorno = 00:00:00     (padrão de retorno)
-    - oraculo_ativado = nao          (padrão do oráculo)
+    - executar_sistema = no                (trava de segurança)
+    - pausa_apos_filmes = 0                (pausa por quantidade)
+    - encerrar_apos_filmes = 0             (encerramento por quantidade)
+    - rerun_dias = 1                       (padrão do rerun)
+    - rerun_horario_final = 23:59:59       (padrão seguro: fim do dia)
+    - pausa_retorno = 23:59:59             (padrão seguro: fim do dia)
+    - oraculo_retorno = 23:59:59           (padrão seguro: fim do dia)
+    - oraculo_ativado = nao                (padrão do oráculo)
 
     CORREÇÃO: procura a linha pela CHAVE, não pelo texto exato do valor.
     Mantém formatação original (espaços, EOL).
+    Horários usam 23:59:59 como "desligado/seguro" — não dispara à meia-noite.
     """
     # Mapeamento: chave -> valor_padrão
     RESETS = {
@@ -1841,9 +1842,9 @@ def _travar_painel_seguranca():
         "pausa_apos_filmes": "0",
         "encerrar_apos_filmes": "0",
         "rerun_dias": "1",
-        "rerun_horario_final": "00:00:00",
-        "pausa_retorno": "00:00:00",
-        "oraculo_retorno": "00:00:00",
+        "rerun_horario_final": "23:59:59",
+        "pausa_retorno": "23:59:59",
+        "oraculo_retorno": "23:59:59",
         "oraculo_ativado": "nao",
     }
 
