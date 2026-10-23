@@ -1336,20 +1336,6 @@ def id_sessao(novo_texto):
         print()
         log(f"Erro ao atualizar {nome_fonte}: {e}")
 
-# def id_live(texto_aviso):
-#     """Mantida para uso futuro — removia o título da live (REACT/RERUN) na fonte ID LIVE.
-#     Desativada: o texto fixo 'CHAT' agora é configurado direto no OBS e não deve ser sobrescrito."""
-#     try:
-#         nome_fonte = "ID LIVE"
-#
-#         client.set_input_settings(nome_fonte, {'text': texto_aviso}, True)
-#         print()
-#         log(f"ID LIVE atualizado para: {texto_aviso}")
-#
-#     except Exception as e:
-#         print()
-#         log(f"Erro ao atualizar {nome_fonte}: {e}")
-
 def aba_midias():
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, event_client, global_encerrar_apos_filmes
     cena = "MÍDIAS"
@@ -1620,7 +1606,7 @@ def skip_videos(nome_fonte="FILMES"):
     log("Skip realizado!")
 
 def aba_pausa(modo="oraculo"):
-    global midia_decorrido_global
+    global midia_decorrido_global, ultima_mod_pausa
     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
     cena = "PAUSA"
     trocar_cena(cena)
