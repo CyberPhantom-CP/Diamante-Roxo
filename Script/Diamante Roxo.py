@@ -2139,8 +2139,12 @@ while not encerrar_sistema:
             # Tentativa de reconectar ao OBS sem flood (so tenta se nao estiver ja tentando)
             _reconectando_obs = True
             try:
-                if conectar_obs():
-                    log("[RECONEXAO] Reconectado ao OBS com sucesso.")
+                import sys as _sys, io as _io
+                _old_stderr = _sys.stderr
+                _sys.stderr = _io.StringIO()
+                try:
+                    if conectar_obs():
+                        log("[RECONEXAO] Reconectado ao OBS com sucesso.")
                     # Se havia filme em andamento, tenta restaurar a posicao
                     if midia_decorrido_global > 0 and sistema_em_andamento:
                         try:
@@ -2150,8 +2154,10 @@ while not encerrar_sistema:
                             log(f"[RECONEXAO] Filme retomado do segundo {int(midia_decorrido_global)}")
                         except Exception as e:
                             log(f"[ERRO] Falha ao retomar filme apos reconexao: {e}")
-                else:
-                    log("[RECONEXAO] Tentativa de reconexao ao OBS falhou, tentando novamente no próximo ciclo...")
+                    else:
+                        log("[RECONEXAO] Tentativa de reconexao ao OBS falhou, tentando novamente no próximo ciclo...")
+                finally:
+                    _sys.stderr = _old_stderr
             except Exception as e:
                 log(f"[ERRO] Erro ao tentar reconectar ao OBS: {e}")
             finally:
