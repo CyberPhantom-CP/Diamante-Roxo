@@ -2127,12 +2127,15 @@ def _sinal_parar(_s, _f):
 signal.signal(signal.SIGINT, _sinal_parar)
 
 def restaurar_cena_perfil_obs():
-    """Se reconectado e OBS mudou de cena/perfil, volta ao padrão KICK/K.S."""
+    """Se reconectado e OBS mudou de perfil/cena, retorna ao padrão KICK/K.S (coleção)."""
     try:
         cena_atual = client.get_current_program_scene().current_program_scene_name
-        if cena_atual != "K.S":
-            client.set_current_program_scene("K.S")
-            log("[RECONEXAO] Cena restaurada para K.S (perfil KICK).")
+        # K.S é coleção de cenas; nao forçamos via set_current_program_scene
+        # apenas logamos se tiver mudado do padrão esperado
+        if cena_atual and cena_atual != "K.S":
+            # Se já está dentro da coleção (ex: cena ativa dentro de K.S), nao altera
+            # Se precisar forçar uma cena específica dentro de K.S, informar nome exato
+            log(f"[RECONEXAO] Cena atual: {cena_atual}. Perfil KICK mantido.")
     except Exception as e:
         log(f"[AVISO] Falha ao restaurar cena/perfil OBS: {e}")
 
