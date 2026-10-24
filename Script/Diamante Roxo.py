@@ -2131,13 +2131,13 @@ def restaurar_cena_perfil_obs():
     try:
         try:
             profile_val = client.get_current_profile()
-            profile_ok = (profile_val == "KICK")
+            profile_ok = (profile_val.strip().lower() == "kick")
         except Exception:
             profile_ok = True  # nao conseguimos ler: assume correto (silencioso)
 
         try:
             coll_val = client.get_current_scene_collection()
-            coll_ok = (coll_val == "K.S")
+            coll_ok = (coll_val.strip().lower() == "k.s")
         except Exception:
             coll_ok = True  # nao conseguimos ler: assume correto (silencioso)
 
