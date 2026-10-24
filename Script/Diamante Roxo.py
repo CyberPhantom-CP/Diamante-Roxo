@@ -2136,8 +2136,10 @@ def restaurar_cena_perfil_obs():
         except Exception:
             pass
         if not profile_ok:
-            client.set_current_profile("KICK")
-            log("[PERFIL] Perfil restaurado para KICK.")
+            try:
+                client.set_current_profile("KICK")
+            except Exception:
+                pass
 
         coll_ok = False
         try:
@@ -2145,8 +2147,10 @@ def restaurar_cena_perfil_obs():
         except Exception:
             pass
         if not coll_ok:
-            client.set_current_scene_collection("K.S")
-            log("[CENA] Coleção restaurada para K.S.")
+            try:
+                client.set_current_scene_collection("K.S")
+            except Exception:
+                pass
     except Exception as e:
         log(f"[AVISO] Falha ao restaurar perfil/cena OBS: {e}")
 
