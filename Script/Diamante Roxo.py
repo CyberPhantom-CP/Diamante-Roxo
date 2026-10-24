@@ -1,6 +1,6 @@
 # ====================================================================
 # ====================================================================
-# Diamante Roxo v5.1
+# Diamante Roxo v6.0
 # ====================================================================
 # Sistema de automação para transmissão ao vivo
 # Gerencia cenas, áudio, alertas e transições no OBS Studio
