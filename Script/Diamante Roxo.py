@@ -1051,6 +1051,7 @@ def carregar_censuras_do_filme(indice_filme):
     return lista_censuras
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
+    global _reconectando_obs
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
@@ -1069,25 +1070,26 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
         if is_midia and nome_fonte:
             try:
                 status_obs = client.get_media_input_status(nome_fonte)
-                cursor_atual = status_obs.media_cursor
-                decorrido = cursor_atual / 1000.0
+                cursor_atual = status_obs.media_cursor if hasattr(status_obs, 'media_cursor') else None
+                if cursor_atual is not None:
+                    decorrido = cursor_atual / 1000.0
 
-                if decorrido_total > 0 and decorrido < decorrido_total - 5:
-                    try:
-                        client.set_media_input_cursor(nome_fonte, int(decorrido_total * 1000))
-                    except Exception:
-                        pass
-                    decorrido = decorrido_total
+                    if decorrido_total > 0 and decorrido < decorrido_total - 5:
+                        try:
+                            client.set_media_input_cursor(nome_fonte, int(decorrido_total * 1000))
+                        except Exception:
+                            pass
+                        decorrido = decorrido_total
 
-                if timeline_vlc_global >= 0:
-                    if cursor_atual < (timeline_vlc_global - 15000):
-                        if timeline_vlc_global > 5000:
-                            timeline_vlc_global = cursor_atual
-                            if is_midia: midia_decorrido_global = 0.0
-                            resultado_final = "skip_detectado"
-                            break 
-                    
-                timeline_vlc_global = cursor_atual
+                    if timeline_vlc_global >= 0:
+                        if cursor_atual < (timeline_vlc_global - 15000):
+                            if timeline_vlc_global > 5000:
+                                timeline_vlc_global = cursor_atual
+                                if is_midia: midia_decorrido_global = 0.0
+                                resultado_final = "skip_detectado"
+                                break 
+                        
+                    timeline_vlc_global = cursor_atual
             except Exception:
                 # Conexao com OBS caiu durante o filme: pausar, salvar posicao e tentar reconectar
                 print()
