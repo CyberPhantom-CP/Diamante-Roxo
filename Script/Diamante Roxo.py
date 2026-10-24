@@ -24,7 +24,7 @@
 # ====================================================================
 # Autor   : CyberPhantom (C.P.)
 # Criado  : 24/03/2026
-# Revisão : 01/10/2026
+# Revisão : 23/10/2026
 # ====================================================================
 
 # 1) Importação de Módulos e Configuração Inicial.
@@ -2138,7 +2138,7 @@ def restaurar_cena_perfil_obs():
             client.set_current_scene_collection("K.S")
         except Exception:
             pass
-        log("[RECONEXAO] Perfil KICK e coleção K.S restaurados.")
+        log("[PERFIL/CENA] Perfil KICK e coleção K.S restaurados.")
     except Exception as e:
         log(f"[AVISO] Falha ao restaurar perfil/cena OBS: {e}")
     except Exception as e:
