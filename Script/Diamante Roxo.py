@@ -162,6 +162,7 @@ global_rerun_horario_final = "00:00:00"
 
 
 _stopping_stream = False  # True enquanto stop_stream() é intencional, evita reação do on_output_state_changed
+_reconectando_obs = False  # True enquanto está tentando reconectar ao OBS, evita flood de conexão
 
 
 
@@ -1085,9 +1086,47 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                             if is_midia: midia_decorrido_global = 0.0
                             resultado_final = "skip_detectado"
                             break 
-                
+                    
                 timeline_vlc_global = cursor_atual
             except Exception:
+                # Conexao com OBS caiu durante o filme: pausar, salvar posicao e tentar reconectar
+                print()
+                log("[ERRO] Conexao com OBS perdida durante a reproducao. Pausando filme e tentando reconectar...")
+                try:
+                    client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
+                    log("[RECONEXAO] Filme pausado devido a perda de conexao com OBS.")
+                except Exception:
+                    pass  # Se nao conseguiu pausar, segue tentando reconectar
+                
+                # Loop de reconexao ao OBS
+                while not encerrar_sistema and not _reconectando_obs:
+                    _reconectando_obs = True
+                    try:
+                        if conectar_obs():
+                            log("[RECONEXAO] Reconectado ao OBS com sucesso.")
+                            # Restaurar posicao do filme e dar play
+                            try:
+                                if midia_decorrido_global > 0:
+                                    client.set_media_input_cursor("FILMES", int(midia_decorrido_global * 1000))
+                                    time.sleep(0.3)
+                                    client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
+                                    log(f"[RECONEXAO] Filme retomado do segundo {int(midia_decorrido_global)}.")
+                                else:
+                                    # Nao tinha decorrido salvo, apenas tenta retomar do zero
+                                    client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
+                                    log("[RECONEXAO] Filme retomado do inicio.")
+                            except Exception as e:
+                                log(f"[ERRO] Falha ao retomar filme apos reconexao: {e}")
+                            break  # Sai do loop de reconexao
+                        else:
+                            log("[RECONEXAO] Tentativa de reconexao falhou, tentando novamente em 5 segundos...")
+                    except Exception as e:
+                        log(f"[ERRO] Erro durante tentativa de reconexao: {e}")
+                    finally:
+                        _reconectando_obs = False
+                    
+                    if not encerrar_sistema:
+                        time.sleep(5)  # Espera 5s antes de tentar novamente
                 decorrido = decorrido_total + (agora - inicio)
         else:
             decorrido = decorrido_total + (agora - inicio)
@@ -2090,6 +2129,41 @@ signal.signal(signal.SIGINT, _sinal_parar)
 # == Loop Principal ==
 while not encerrar_sistema:
     verificar_agendamento()  # Verifica a cada ciclo para detectar mudanças no arquivo
+    
+    # === Reconexao automatica ao OBS caso a conexao caia durante a transmissao ===
+    try:
+        if client is not None:
+            # Testa se a conexao ainda esta viva
+            client.get_current_program_scene()
+        elif client is None and not _reconectando_obs:
+            # Tentativa de reconectar ao OBS sem flood (so tenta se nao estiver ja tentando)
+            _reconectando_obs = True
+            try:
+                if conectar_obs():
+                    log("[RECONEXAO] Reconectado ao OBS com sucesso.")
+                    # Se havia filme em andamento, tenta restaurar a posicao
+                    if midia_decorrido_global > 0 and sistema_em_andamento:
+                        try:
+                            client.set_media_input_cursor("FILMES", int(midia_decorrido_global * 1000))
+                            time.sleep(0.3)
+                            client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
+                            log(f"[RECONEXAO] Filme retomado do segundo {int(midia_decorrido_global)}")
+                        except Exception as e:
+                            log(f"[ERRO] Falha ao retomar filme apos reconexao: {e}")
+                else:
+                    log("[RECONEXAO] Tentativa de reconexao ao OBS falhou, tentando novamente no próximo ciclo...")
+            except Exception as e:
+                log(f"[ERRO] Erro ao tentar reconectar ao OBS: {e}")
+            finally:
+                _reconectando_obs = False
+    except Exception as e:
+        # Se cliente existe mas perdeu a conexao (ex: OBS fechou)
+        if client is not None:
+            log(f"[ERRO] Conexao com OBS perdida: {e}")
+            client = None
+            event_client = None
+            _reconectando_obs = False  # Permite tentar reconectar no proximo ciclo
+    # ============================================================================
     
     try:
         schedule.run_pending()
