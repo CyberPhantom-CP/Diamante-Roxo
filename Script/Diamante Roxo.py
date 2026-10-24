@@ -2144,14 +2144,13 @@ def restaurar_cena_perfil_obs():
         if not profile_ok:
             try:
                 client.set_current_profile("KICK")
-                log("[PERFIL] Perfil restaurado para KICK.")
             except Exception:
                 pass
+            log("[RECONEXAO] Perfil KICK e coleção K.S restaurados.")
 
         if not coll_ok:
             try:
                 client.set_current_scene_collection("K.S")
-                log("[CENA] Coleção restaurada para K.S.")
             except Exception:
                 pass
     except Exception as e:
