@@ -2154,18 +2154,19 @@ while not encerrar_sistema:
                 _old_stderr = _sys.stderr
                 _sys.stderr = _io.StringIO()
                 try:
-                    if conectar_obs():
+                    conectado = conectar_obs()
+                    if conectado:
                         log("[RECONEXAO] Reconectado ao OBS com sucesso.")
                         restaurar_cena_perfil_obs()
-                    # Se havia filme em andamento, tenta restaurar a posicao
-                    if midia_decorrido_global > 0 and sistema_em_andamento:
-                        try:
-                            client.set_media_input_cursor("FILMES", int(midia_decorrido_global * 1000))
-                            time.sleep(0.3)
-                            client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
-                            log(f"[RECONEXAO] Filme retomado do segundo {int(midia_decorrido_global)}")
-                        except Exception as e:
-                            log(f"[ERRO] Falha ao retomar filme apos reconexao: {e}")
+                        # Se havia filme em andamento, tenta restaurar a posicao
+                        if midia_decorrido_global > 0 and sistema_em_andamento:
+                            try:
+                                client.set_media_input_cursor("FILMES", int(midia_decorrido_global * 1000))
+                                time.sleep(0.3)
+                                client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
+                                log(f"[RECONEXAO] Filme retomado do segundo {int(midia_decorrido_global)}")
+                            except Exception as e:
+                                log(f"[ERRO] Falha ao retomar filme apos reconexao: {e}")
                     else:
                         log("[RECONEXAO] Tentativa de reconexao ao OBS falhou, tentando novamente no próximo ciclo...")
                 finally:
