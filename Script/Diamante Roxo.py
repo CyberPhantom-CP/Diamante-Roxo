@@ -2126,6 +2126,17 @@ def _sinal_parar(_s, _f):
 
 signal.signal(signal.SIGINT, _sinal_parar)
 
+def restaurar_cena_perfil_obs():
+    """Se reconectado e OBS mudou de cena/perfil, volta ao padrão KICK/K.S."""
+    try:
+        cena_atual = client.get_current_program_scene().current_program_scene_name
+        if cena_atual != "K.S":
+            client.set_current_program_scene("K.S")
+            log("[RECONEXAO] Cena restaurada para K.S (perfil KICK).")
+    except Exception as e:
+        log(f"[AVISO] Falha ao restaurar cena/perfil OBS: {e}")
+
+
 # == Loop Principal ==
 while not encerrar_sistema:
     verificar_agendamento()  # Verifica a cada ciclo para detectar mudanças no arquivo
@@ -2145,6 +2156,7 @@ while not encerrar_sistema:
                 try:
                     if conectar_obs():
                         log("[RECONEXAO] Reconectado ao OBS com sucesso.")
+                        restaurar_cena_perfil_obs()
                     # Se havia filme em andamento, tenta restaurar a posicao
                     if midia_decorrido_global > 0 and sistema_em_andamento:
                         try:
