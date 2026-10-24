@@ -1,7 +1,6 @@
 import ctypes
 import os
 import re
-import subprocess
 import sys
 import tkinter as tk
 import customtkinter as ctk
@@ -54,7 +53,6 @@ CAMPOS = [
     ("OBS", "obs_host", "Host", "host"),
     ("OBS", "obs_port", "Porta", "port"),
     ("OBS", "obs_password", "Senha", "senha"),
-    ("Agendamentos", "conectar_obs", "Conectar OBS", "tempo"),
     ("Agendamentos", "start_sistema", "Iniciar sistema", "tempo"),
     ("Agendamentos", "retornar_midias", "Retornar midias", "tempo"),
     ("Agendamentos", "iniciar_midias", "Iniciar midias (modo estudo)", "tempo"),
@@ -262,7 +260,7 @@ class CentralApp:
             "Agendamentos",
             [("APPS", ["mixitup", "streamerbot", "kickerino", "chatty",
                         "obs64studio", "minimizar_janelas"]),
-             ("SISTEMA / OBS", ["conectar_obs", "start_sistema", "retornar_midias", "iniciar_midias"])],
+             ("SISTEMA / OBS", ["start_sistema", "retornar_midias", "iniciar_midias"])],
         )
         self._montar_aba_tempos()
 
@@ -285,14 +283,6 @@ class CentralApp:
                                        font=ctk.CTkFont(size=15, weight="bold"),
                                        command=self._alternar_trava)
         self.btn_trava.pack(pady=14)
-        
-        # Botão para iniciar o script via .bat
-        self.btn_iniciar = ctk.CTkButton(pagina, text="▶ INICIAR SCRIPT (.bat)", width=280, height=40,
-                                         font=ctk.CTkFont(size=13, weight="bold"),
-                                         fg_color="#2f9e44", hover_color="#2b8a3e",
-                                         command=self._iniciar_script_bat)
-        self.btn_iniciar.pack(pady=(0, 14))
-        
         ctk.CTkLabel(
             pagina,
             text="LIGAR = o sistema pode iniciar | DESLIGAR = bloqueado.\n"
@@ -408,24 +398,6 @@ class CentralApp:
         else:
             self.lbl_trava.configure(text="SISTEMA BLOQUEADO", text_color="#eb4d4b")
             self.btn_trava.configure(text="LIGAR SISTEMA", fg_color="#e03131", hover_color="#c92a2a")
-
-    def _iniciar_script_bat(self):
-        """Executa o .bat que dispara a task agendada 'Diamante Roxo'."""
-        bat_path = os.path.join(PASTA_PADRAO, "Diamante Roxo (Execução manual).bat")
-        if not os.path.exists(bat_path):
-            self._status(f"Arquivo .bat nao encontrado: {bat_path}", COR_ERRO)
-            return
-        try:
-            # Popen sem esperar, detached, na mesma pasta
-            subprocess.Popen(
-                [bat_path],
-                cwd=PASTA_PADRAO,
-                shell=True,
-                creationflags=subprocess.CREATE_NEW_CONSOLE
-            )
-            self._status("Script iniciado via .bat (nova janela).", COR_OK)
-        except Exception as e:
-            self._status(f"Falha ao iniciar .bat: {e}", COR_ERRO)
 
     def _recarregar(self):
         self.valores = ler_painel(CAMINHO_PAINEL)

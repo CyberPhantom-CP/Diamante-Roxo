@@ -69,7 +69,6 @@ obs64studio       = 00:00:00
 minimizar_janelas = 00:00:00
 
 # == Sistema ==
-conectar_obs    = 00:00:00
 start_sistema   = 00:00:00
 retornar_midias = 00:00:00
 iniciar_midias  = 00:00:00    # so usado se modo=estudo
