@@ -2129,26 +2129,32 @@ signal.signal(signal.SIGINT, _sinal_parar)
 def restaurar_cena_perfil_obs():
     """Se reconectado e OBS mudou de perfil/coleção, volta ao padrão KICK/K.S."""
     try:
-        # Tenta verificar atual — se nao existir metodo, apenas aplica
-        profile_ok = False
+        # Lê o atual; se get falhou assume que definiu acaba de mudar
+        profile_ok = True  # default assume ja certo
         try:
-            profile_ok = (client.get_current_profile() == "KICK")
+            if client.get_current_profile() != "KICK":
+                profile_ok = False
         except Exception:
-            pass
+            profile_ok = False
+
+        coll_ok = True
+        try:
+            if client.get_current_scene_collection() != "K.S":
+                coll_ok = False
+        except Exception:
+            coll_ok = False
+
         if not profile_ok:
             try:
                 client.set_current_profile("KICK")
+                log("[PERFIL] Perfil restaurado para KICK.")
             except Exception:
                 pass
 
-        coll_ok = False
-        try:
-            coll_ok = (client.get_current_scene_collection() == "K.S")
-        except Exception:
-            pass
         if not coll_ok:
             try:
                 client.set_current_scene_collection("K.S")
+                log("[CENA] Coleção restaurada para K.S.")
             except Exception:
                 pass
     except Exception as e:
