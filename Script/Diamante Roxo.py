@@ -1337,12 +1337,19 @@ def aba_inicio():
         aba_midias()
 
 _vis_cache = {}
+_vis_estado = {}
 
 def limpar_cache_vis():
     _vis_cache.clear()
+    _vis_estado.clear()
 
 def visibilidade_fonte(cena, nome_fonte, visivel):
     try:
+        # Só altera e loga se realmente mudou de estado
+        estado_atual = _vis_estado.get(cena, {}).get(nome_fonte)
+        if estado_atual is not None and estado_atual == visivel:
+            return
+
         if cena not in _vis_cache:
             itens = client.get_scene_item_list(cena).scene_items
             _vis_cache[cena] = itens
@@ -1351,6 +1358,7 @@ def visibilidade_fonte(cena, nome_fonte, visivel):
         for item in itens:
             if item['sourceName'] == nome_fonte:
                 client.set_scene_item_enabled(cena, item['sceneItemId'], visivel)
+                _vis_estado.setdefault(cena, {})[nome_fonte] = visivel
                 print()
                 log(f"Fonte '{nome_fonte}' -> {'LIGADA' if visivel else 'DESLIGADA'}")
                 return
@@ -1360,6 +1368,7 @@ def visibilidade_fonte(cena, nome_fonte, visivel):
                 for sub in res_g:
                     if sub['sourceName'] == nome_fonte:
                         client.set_scene_item_enabled(g_nome, sub['sceneItemId'], visivel)
+                        _vis_estado.setdefault(cena, {})[nome_fonte] = visivel
                         print()
                         log(f"Fonte '{nome_fonte}' (dentro de '{g_nome}') -> {'LIGADA' if visivel else 'DESLIGADA'}")
                         return
@@ -2143,8 +2152,6 @@ def restaurar_cena_perfil_obs():
         except Exception:
             pass
         log("[PERFIL/CENA] Perfil KICK e coleção K.S restaurados.")
-    except Exception as e:
-        log(f"[AVISO] Falha ao restaurar perfil/cena OBS: {e}")
     except Exception as e:
         log(f"[AVISO] Falha ao restaurar perfil/cena OBS: {e}")
 
