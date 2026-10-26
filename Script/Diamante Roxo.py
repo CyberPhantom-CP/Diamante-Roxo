@@ -1090,6 +1090,8 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                                 break 
                         
                     timeline_vlc_global = cursor_atual
+                else:
+                    decorrido = decorrido_total + (agora - inicio)
             except Exception:
                 # Conexao com OBS caiu durante o filme: pausar, salvar posicao e tentar reconectar
                 print()
