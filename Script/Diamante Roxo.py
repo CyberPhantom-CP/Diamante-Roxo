@@ -952,25 +952,26 @@ timeline_vlc_global = -1
 
 # === SISTEMA DE CENSURA DINÂMICA ===
 def converter_hhmmss_tupla(texto):
-    """Valida 'HH:MM:SS' e devolve (h, m, s), ou None se for invalido.
+    """Valida 'HH:MM:SS' ou 'HH:MM:SS:MS' e devolve (h, m, s, ms), ou None se for invalido.
 
-    Versao que devolve as partes separadas, para os trechos que precisam
-    montar um datetime (horario de retorno da pausa e alvo do Rerun).
+    ms eh opcional: se nao houver, devolve 0. Usado para duracoes de filme,
+    censura e tempos de cena, onde a precisao de milissegundos importa.
     """
     partes = texto.strip().split(":")
-    if len(partes) != 3:
+    if len(partes) not in (3, 4):
         return None
     try:
-        h, m, s = (int(p) for p in partes)
+        h, m, s = (int(p) for p in partes[:3])
+        ms = int(partes[3]) if len(partes) == 4 else 0
     except ValueError:
         return None
-    if not (0 <= h < 24 and 0 <= m < 60 and 0 <= s < 60):
+    if not (0 <= h < 24 and 0 <= m < 60 and 0 <= s < 60 and 0 <= ms < 1000):
         return None
-    return h, m, s
+    return h, m, s, ms
 
 
 def converter_hhmmss(texto):
-    """Converte 'HH:MM:SS' em segundos.
+    """Converte 'HH:MM:SS' ou 'HH:MM:SS:MS' em segundos (float se houver MS).
 
     Devolve None quando o formato nao e valido, em vez de estourar erro.
     Usado para validar o tempo_duracao.txt e o controle_censura.txt antes
@@ -979,8 +980,8 @@ def converter_hhmmss(texto):
     horario = converter_hhmmss_tupla(texto)
     if horario is None:
         return None
-    h, m, s = horario
-    return h * 3600 + m * 60 + s
+    h, m, s, ms = horario
+    return h * 3600 + m * 60 + s + (ms / 1000.0)
 
 
 def carregar_censuras_do_filme(indice_filme):
@@ -1691,7 +1692,7 @@ def aba_pausa(modo="oraculo"):
                 f"Esperado HH:MM:SS. Esta pausa não terá retorno automático.")
             proximo_retorno = None
         else:
-            h_r, m_r, s_r = horario_retorno
+            h_r, m_r, s_r, _ = horario_retorno
             proximo_retorno = datetime.now().replace(hour=h_r, minute=m_r, second=s_r, microsecond=0)
             if proximo_retorno <= datetime.now():
                 proximo_retorno += timedelta(days=1)
@@ -1775,7 +1776,7 @@ def horario_de_rerun():
                 horario_rerun = converter_hhmmss_tupla(ultimo_horario_visto)
                 if horario_rerun is None:
                     raise ValueError(f"horário inválido (esperado HH:MM:SS): {ultimo_horario_visto!r}")
-                h, m, s = horario_rerun
+                h, m, s, _ = horario_rerun
                 agora = datetime.now()
                 momento_final = (agora + timedelta(days=ultimos_dias_vistos)).replace(hour=h, minute=m, second=s, microsecond=0)
                 
