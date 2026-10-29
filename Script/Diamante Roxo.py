@@ -100,6 +100,7 @@ caminho_censura = os.path.join(diretorio_base, "controle_censura.txt")
 
 ultima_modificacao = 0
 ultimo_polling = 3  # segundos entre cada ciclo do loop principal
+intervalo_detecao = 1.0  # segundos entre cada checagem de censura/skip durante filmes
 
 # === VERIFICAÇÃO ESTRITA DA TRAVA DE SEGURANÇA ===
 try:
@@ -1227,7 +1228,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
         
         # 1.0s entre deteccoes: metade das chamadas ao OBS por hora de filme,
         # sem atrasar deteccao de skip/censura (o trigger e abrupto, pega na proxima)
-        time.sleep(1.0)
+        time.sleep(intervalo_detecao)
         
         # --- Reload dos tempos de cena a cada 1s (fora de MIDIAS) ---
         # Isso NÃO interfere no loop de censura/skip, apenas atualiza as variáveis
