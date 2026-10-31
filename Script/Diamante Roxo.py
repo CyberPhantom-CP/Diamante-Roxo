@@ -869,8 +869,8 @@ def pausar_filme_se_rodando():
             if cena == "MÍDIAS":
                 client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
                 log("[GRAMPEADO] Filme pausado.")
-        except Exception:
-            pass
+        except Exception as _e_pausa:
+            log(f"[AVISO] Falha ao pausar filme no OBS: {_e_pausa}")
 
 
 def retomar_filme_se_pausado():
@@ -880,8 +880,8 @@ def retomar_filme_se_pausado():
             if cena == "MÍDIAS":
                 client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
                 log("[GRAMPEADO] Filme retomado.")
-        except Exception:
-            pass
+        except Exception as _e_ret:
+            log(f"[AVISO] Falha ao retomar filme no OBS: {_e_ret}")
 
 
 # === Inicialização de Transmissão/Gravação ===
@@ -1111,8 +1111,8 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 try:
                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
                     log("[RECONEXAO] Filme pausado devido a perda de conexao com OBS.")
-                except Exception:
-                    pass  # Se nao conseguiu pausar, segue tentando reconectar
+                except Exception as _e_pausa_rec:
+                    log(f"[AVISO] Falha ao pausar filme na reconexão: {_e_pausa_rec}")  # segue tentando reconectar
                 
                 # Loop de reconexao ao OBS
                 while not encerrar_sistema and not _reconectando_obs:
