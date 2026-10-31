@@ -99,8 +99,9 @@ painel_geral = os.path.join(diretorio_base, "Painel_de_Controle.txt")
 caminho_censura = os.path.join(diretorio_base, "controle_censura.txt")
 
 ultima_modificacao = 0
-ultimo_polling = 3  # segundos entre cada ciclo do loop principal
-intervalo_detecao = 1.0  # segundos entre cada checagem de censura/skip durante filmes
+ultimo_polling = 1  # segundos entre cada ciclo do loop principal
+intervalo_detecao = 0.1  # segundos entre cada checagem de censura/skip durante filmes
+limiar_skip_ms = 15000  # ms de atraso no cursor do VLC para considerar skip (15s)
 
 # === VERIFICAÇÃO ESTRITA DA TRAVA DE SEGURANÇA ===
 try:
@@ -1084,7 +1085,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         decorrido = decorrido_total
 
                     if timeline_vlc_global >= 0:
-                        if cursor_atual < (timeline_vlc_global - 15000):
+                        if cursor_atual < (timeline_vlc_global - limiar_skip_ms):
                             if timeline_vlc_global > 5000:
                                 timeline_vlc_global = cursor_atual
                                 if is_midia: midia_decorrido_global = 0.0
@@ -1226,7 +1227,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
         except Exception:
             pass
         
-        # 1.0s entre deteccoes: metade das chamadas ao OBS por hora de filme,
+        # {0}s entre deteccoes: metade das chamadas ao OBS por hora de filme,
         # sem atrasar deteccao de skip/censura (o trigger e abrupto, pega na proxima)
         time.sleep(intervalo_detecao)
         
