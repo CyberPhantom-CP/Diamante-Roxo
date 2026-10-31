@@ -100,8 +100,9 @@ caminho_censura = os.path.join(diretorio_base, "controle_censura.txt")
 
 ultima_modificacao = 0
 ultimo_polling = 1  # segundos entre cada ciclo do loop principal
-intervalo_detecao = 0.1  # segundos entre cada checagem de censura/skip durante filmes
+intervalo_detecao = 0.001  # segundos entre cada checagem de censura/skip durante filmes
 limiar_skip_ms = 15000  # ms de atraso no cursor do VLC para considerar skip (15s)
+debounce_skip = 5  # quantas iterações seguidas confirmam skip antes de disparar
 
 # === VERIFICAÇÃO ESTRITA DA TRAVA DE SEGURANÇA ===
 try:
@@ -165,6 +166,7 @@ global_rerun_horario_final = "00:00:00"
 
 _stopping_stream = False  # True enquanto stop_stream() é intencional, evita reação do on_output_state_changed
 _reconectando_obs = False  # True enquanto está tentando reconectar ao OBS, evita flood de conexão
+_skip_consecutivo = 0  # contador de iterações seguidas com skip detectado (debounce)
 
 
 
@@ -1055,6 +1057,7 @@ def carregar_censuras_do_filme(indice_filme):
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
     global _reconectando_obs
+    global _skip_consecutivo
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
@@ -1066,6 +1069,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
     
     proximo_recusado = False  
     resultado_final = "normal"
+    _skip_consecutivo = 0  # reset do debounce no início de cada filme
 
     while True:
         agora = time.time()
@@ -1086,11 +1090,15 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
 
                     if timeline_vlc_global >= 0:
                         if cursor_atual < (timeline_vlc_global - limiar_skip_ms):
-                            if timeline_vlc_global > 5000:
-                                timeline_vlc_global = cursor_atual
-                                if is_midia: midia_decorrido_global = 0.0
-                                resultado_final = "skip_detectado"
-                                break 
+                            _skip_consecutivo += 1
+                            if _skip_consecutivo >= debounce_skip:
+                                if timeline_vlc_global > 5000:
+                                    timeline_vlc_global = cursor_atual
+                                    if is_midia: midia_decorrido_global = 0.0
+                                    resultado_final = "skip_detectado"
+                                    break
+                        else:
+                            _skip_consecutivo = 0
                         
                     timeline_vlc_global = cursor_atual
                 else:
