@@ -157,6 +157,7 @@ global_pausa_apos_filmes = 0
 global_pausa_retorno = "05:00:00"
 global_oraculo_retorno = "05:00:00"
 global_encerrar_apos_filmes = 0
+ultima_mod_pausa = 0
 
 # === Sistema do Rerun ===
 global_rerun_dias = 1
@@ -1232,8 +1233,8 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     midia_decorrido_global = decorrido
                 resultado_final = "pular"
                 break
-        except Exception:
-            pass
+        except Exception as _e_cena:
+            log(f"[AVISO] Erro ao verificar cena ativa ({cena_esperada}): {_e_cena}")
         
         # {0}s entre deteccoes: metade das chamadas ao OBS por hora de filme,
         # sem atrasar deteccao de skip/censura (o trigger e abrupto, pega na proxima)
