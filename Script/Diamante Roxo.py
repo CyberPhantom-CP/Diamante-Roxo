@@ -24,7 +24,7 @@
 # ====================================================================
 # Autor   : CyberPhantom (C.P.)
 # Criado  : 24/03/2026
-# Revisão : 01/11/2026 — Correção de falso skip no filme 3: intervalo 0.05s, grace period 5s nos 2 caminhos (automático + manual), ultima_troca_arquivo marcado após time.sleep(2)
+# Revisão : 01/11/2026
 # ====================================================================
 
 # 1) Importação de Módulos e Configuração Inicial.
