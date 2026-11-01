@@ -1405,7 +1405,7 @@ def id_sessao(novo_texto):
         log(f"Erro ao atualizar {nome_fonte}: {e}")
 
 def aba_midias():
-    global midia_idx_global, midia_decorrido_global, timeline_vlc_global, event_client, global_encerrar_apos_filmes
+    global midia_idx_global, midia_decorrido_global, timeline_vlc_global, event_client, global_encerrar_apos_filmes, ultima_troca_arquivo
     cena = "MÍDIAS"
     fonte_vlc = "FILMES"
 
@@ -1551,6 +1551,7 @@ def aba_midias():
             timeline_vlc_global = -1
             
             time.sleep(2)
+            ultima_troca_arquivo = time.time()  # mesma correção do skip automático: marca DEPOIS do sleep, pra dar carência real contra falso skip no próximo filme
 
             midia_idx_global += 1
             print()
