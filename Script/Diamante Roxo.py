@@ -1105,7 +1105,9 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         else:
                             _skip_consecutivo = 0
                         
-                    timeline_vlc_global = cursor_atual
+                        # Só atualiza timeline se não está em meio a contagem de skip (evita zerar contagem no pull manual)
+                        if _skip_consecutivo == 0:
+                            timeline_vlc_global = cursor_atual
                 else:
                     decorrido = decorrido_total + (agora - inicio)
             except Exception:
