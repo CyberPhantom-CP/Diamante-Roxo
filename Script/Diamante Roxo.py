@@ -99,10 +99,8 @@ painel_geral = os.path.join(diretorio_base, "Painel_de_Controle.txt")
 caminho_censura = os.path.join(diretorio_base, "controle_censura.txt")
 
 ultima_modificacao = 0
-ultimo_polling = 1  # segundos entre cada ciclo do loop principal
-intervalo_detecao = 0.001  # segundos entre cada checagem de censura/skip durante filmes
-limiar_skip_ms = 15000  # ms de atraso no cursor do VLC para considerar skip (15s)
-debounce_skip = 50  # quantas iterações seguidas confirmam skip antes de disparar (com 1ms = 50ms)
+ultimo_polling = 3  # segundos entre cada ciclo do loop principal
+intervalo_detecao = 1.0  # segundos entre cada checagem de censura/skip durante filmes
 
 # === VERIFICAÇÃO ESTRITA DA TRAVA DE SEGURANÇA ===
 try:
@@ -157,7 +155,6 @@ global_pausa_apos_filmes = 0
 global_pausa_retorno = "05:00:00"
 global_oraculo_retorno = "05:00:00"
 global_encerrar_apos_filmes = 0
-ultima_mod_pausa = 0
 
 # === Sistema do Rerun ===
 global_rerun_dias = 1
@@ -167,7 +164,6 @@ global_rerun_horario_final = "00:00:00"
 
 _stopping_stream = False  # True enquanto stop_stream() é intencional, evita reação do on_output_state_changed
 _reconectando_obs = False  # True enquanto está tentando reconectar ao OBS, evita flood de conexão
-_skip_consecutivo = 0  # contador de iterações seguidas com skip detectado (debounce)
 
 
 
@@ -869,8 +865,8 @@ def pausar_filme_se_rodando():
             if cena == "MÍDIAS":
                 client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
                 log("[GRAMPEADO] Filme pausado.")
-        except Exception as _e_pausa:
-            log(f"[AVISO] Falha ao pausar filme no OBS: {_e_pausa}")
+        except Exception:
+            pass
 
 
 def retomar_filme_se_pausado():
@@ -880,8 +876,8 @@ def retomar_filme_se_pausado():
             if cena == "MÍDIAS":
                 client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
                 log("[GRAMPEADO] Filme retomado.")
-        except Exception as _e_ret:
-            log(f"[AVISO] Falha ao retomar filme no OBS: {_e_ret}")
+        except Exception:
+            pass
 
 
 # === Inicialização de Transmissão/Gravação ===
@@ -1058,7 +1054,6 @@ def carregar_censuras_do_filme(indice_filme):
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
     global _reconectando_obs
-    global _skip_consecutivo
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
@@ -1070,7 +1065,6 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
     
     proximo_recusado = False  
     resultado_final = "normal"
-    _skip_consecutivo = 0  # reset do debounce no início de cada filme
 
     while True:
         agora = time.time()
@@ -1090,16 +1084,12 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         decorrido = decorrido_total
 
                     if timeline_vlc_global >= 0:
-                        if cursor_atual < (timeline_vlc_global - limiar_skip_ms):
-                            _skip_consecutivo += 1
-                            if _skip_consecutivo >= debounce_skip:
-                                if timeline_vlc_global > 5000:
-                                    timeline_vlc_global = cursor_atual
-                                    if is_midia: midia_decorrido_global = 0.0
-                                    resultado_final = "skip_detectado"
-                                    break
-                        else:
-                            _skip_consecutivo = 0
+                        if cursor_atual < (timeline_vlc_global - 15000):
+                            if timeline_vlc_global > 5000:
+                                timeline_vlc_global = cursor_atual
+                                if is_midia: midia_decorrido_global = 0.0
+                                resultado_final = "skip_detectado"
+                                break 
                         
                     timeline_vlc_global = cursor_atual
                 else:
@@ -1111,8 +1101,8 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 try:
                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
                     log("[RECONEXAO] Filme pausado devido a perda de conexao com OBS.")
-                except Exception as _e_pausa_rec:
-                    log(f"[AVISO] Falha ao pausar filme na reconexão: {_e_pausa_rec}")  # segue tentando reconectar
+                except Exception:
+                    pass  # Se nao conseguiu pausar, segue tentando reconectar
                 
                 # Loop de reconexao ao OBS
                 while not encerrar_sistema and not _reconectando_obs:
@@ -1233,10 +1223,10 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     midia_decorrido_global = decorrido
                 resultado_final = "pular"
                 break
-        except Exception as _e_cena:
-            log(f"[AVISO] Erro ao verificar cena ativa ({cena_esperada}): {_e_cena}")
+        except Exception:
+            pass
         
-        # {0}s entre deteccoes: metade das chamadas ao OBS por hora de filme,
+        # 1.0s entre deteccoes: metade das chamadas ao OBS por hora de filme,
         # sem atrasar deteccao de skip/censura (o trigger e abrupto, pega na proxima)
         time.sleep(intervalo_detecao)
         
