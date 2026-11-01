@@ -1400,6 +1400,7 @@ def id_sessao(novo_texto):
         log(f"Erro ao atualizar {nome_fonte}: {e}")
 
 def aba_midias():
+    global midia_idx_global, midia_decorrido_global, timeline_vlc_global, event_client, global_encerrar_apos_filmes
     cena = "MÍDIAS"
     fonte_vlc = "FILMES"
 
