@@ -168,7 +168,6 @@ global_rerun_horario_final = "00:00:00"
 _stopping_stream = False  # True enquanto stop_stream() é intencional, evita reação do on_output_state_changed
 _reconectando_obs = False  # True enquanto está tentando reconectar ao OBS, evita flood de conexão
 _skip_consecutivo = 0  # contador de iterações seguidas com skip detectado (debounce)
-ultima_troca_arquivo = 0  # timestamp da última troca automática de arquivo (skip_videos)
 
 
 
@@ -1059,7 +1058,6 @@ def carregar_censuras_do_filme(indice_filme):
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
     global _reconectando_obs
-    global _skip_consecutivo, ultima_troca_arquivo
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
@@ -1091,10 +1089,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         decorrido = decorrido_total
 
                     if timeline_vlc_global >= 0:
-                        # Grace period após troca automática de arquivo: VLC ainda está estabilizando o cursor
-                        if (agora - ultima_troca_arquivo) < 5.0:
-                            _skip_consecutivo = 0
-                        elif cursor_atual < (timeline_vlc_global - limiar_skip_ms):
+                        if cursor_atual < (timeline_vlc_global - limiar_skip_ms):
                             _skip_consecutivo += 1
                             if _skip_consecutivo >= debounce_skip:
                                 if timeline_vlc_global > 5000:
@@ -1105,9 +1100,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         else:
                             _skip_consecutivo = 0
                         
-                        # Só atualiza timeline se não está em meio a contagem de skip (evita zerar contagem no pull manual), mas permite inicialização (-1)
-                        if _skip_consecutivo == 0 or timeline_vlc_global < 0:
-                            timeline_vlc_global = cursor_atual
+                        timeline_vlc_global = cursor_atual
                 else:
                     decorrido = decorrido_total + (agora - inicio)
             except Exception:
@@ -1407,7 +1400,6 @@ def id_sessao(novo_texto):
         log(f"Erro ao atualizar {nome_fonte}: {e}")
 
 def aba_midias():
-    global midia_idx_global, midia_decorrido_global, timeline_vlc_global, event_client, global_encerrar_apos_filmes, ultima_troca_arquivo
     cena = "MÍDIAS"
     fonte_vlc = "FILMES"
 
@@ -1553,7 +1545,6 @@ def aba_midias():
             timeline_vlc_global = -1
             
             time.sleep(2)
-            ultima_troca_arquivo = time.time()  # mesma correção do skip automático: marca DEPOIS do sleep, pra dar carência real contra falso skip no próximo filme
 
             midia_idx_global += 1
             print()
@@ -1604,7 +1595,6 @@ def aba_midias():
         if i < total - 1:
             skip_videos(fonte_vlc)
             time.sleep(2)
-            ultima_troca_arquivo = time.time()  # marca troca automática de arquivo (protege contra falso skip)
 
             # == Pausa Noturna no Término Normal ==
             hora_atual = int(time.strftime("%H"))
@@ -1670,7 +1660,6 @@ def arquivo_tempo(caminho=None):
     return tempos
 
 def skip_videos(nome_fonte="FILMES"):
-    global ultima_troca_arquivo
     client.trigger_media_input_action(
         nome_fonte,
         "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_NEXT"
