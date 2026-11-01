@@ -24,7 +24,7 @@
 # ====================================================================
 # Autor   : CyberPhantom (C.P.)
 # Criado  : 24/03/2026
-# Revisão : 01/11/2026
+# Revisão : 23/10/2026
 # ====================================================================
 
 # 1) Importação de Módulos e Configuração Inicial.
@@ -102,7 +102,7 @@ ultima_modificacao = 0
 ultimo_polling = 1  # segundos entre cada ciclo do loop principal
 intervalo_detecao = 0.5  # segundos entre cada checagem de censura/skip durante filmes
 limiar_skip_ms = 15000  # ms de atraso no cursor do VLC para considerar skip (15s)
-debounce_skip = 10  # quantas iterações seguidas confirmam skip antes de disparar
+debounce_skip = 50  # quantas iterações seguidas confirmam skip antes de disparar (com 1ms = 50ms)
 
 # === VERIFICAÇÃO ESTRITA DA TRAVA DE SEGURANÇA ===
 try:
@@ -1058,6 +1058,7 @@ def carregar_censuras_do_filme(indice_filme):
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
     global _reconectando_obs
+    global _skip_consecutivo
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
@@ -1100,7 +1101,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         else:
                             _skip_consecutivo = 0
                         
-                        timeline_vlc_global = cursor_atual
+                    timeline_vlc_global = cursor_atual
                 else:
                     decorrido = decorrido_total + (agora - inicio)
             except Exception:
