@@ -102,7 +102,7 @@ ultima_modificacao = 0
 ultimo_polling = 1  # segundos entre cada ciclo do loop principal
 intervalo_detecao = 0.001  # segundos entre cada checagem de censura/skip durante filmes
 limiar_skip_ms = 15000  # ms de atraso no cursor do VLC para considerar skip (15s)
-debounce_skip = 5  # quantas iterações seguidas confirmam skip antes de disparar
+debounce_skip = 50  # quantas iterações seguidas confirmam skip antes de disparar (com 1ms = 50ms)
 
 # === VERIFICAÇÃO ESTRITA DA TRAVA DE SEGURANÇA ===
 try:
