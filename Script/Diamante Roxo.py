@@ -100,7 +100,7 @@ caminho_censura = os.path.join(diretorio_base, "controle_censura.txt")
 
 ultima_modificacao = 0
 ultimo_polling = 1  # segundos entre cada ciclo do loop principal
-intervalo_detecao = 0.001  # segundos entre cada checagem de censura/skip durante filmes
+intervalo_detecao = 0.05  # segundos entre cada checagem de censura/skip durante filmes
 limiar_skip_ms = 15000  # ms de atraso no cursor do VLC para considerar skip (15s)
 debounce_skip = 50  # quantas iterações seguidas confirmam skip antes de disparar (com 1ms = 50ms)
 
@@ -1092,7 +1092,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
 
                     if timeline_vlc_global >= 0:
                         # Grace period após troca automática de arquivo: VLC ainda está estabilizando o cursor
-                        if (agora - ultima_troca_arquivo) < 3.0:
+                        if (agora - ultima_troca_arquivo) < 5.0:
                             _skip_consecutivo = 0
                         elif cursor_atual < (timeline_vlc_global - limiar_skip_ms):
                             _skip_consecutivo += 1
@@ -1601,6 +1601,7 @@ def aba_midias():
         if i < total - 1:
             skip_videos(fonte_vlc)
             time.sleep(2)
+            ultima_troca_arquivo = time.time()  # marca troca automática de arquivo (protege contra falso skip)
 
             # == Pausa Noturna no Término Normal ==
             hora_atual = int(time.strftime("%H"))
@@ -1667,7 +1668,6 @@ def arquivo_tempo(caminho=None):
 
 def skip_videos(nome_fonte="FILMES"):
     global ultima_troca_arquivo
-    ultima_troca_arquivo = time.time()  # marca troca automática de arquivo (protege contra falso skip)
     client.trigger_media_input_action(
         nome_fonte,
         "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_NEXT"
