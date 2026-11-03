@@ -99,8 +99,8 @@ painel_geral = os.path.join(diretorio_base, "Painel_de_Controle.txt")
 caminho_censura = os.path.join(diretorio_base, "controle_censura.txt")
 
 ultima_modificacao = 0
-ultimo_polling = 1  # segundos entre cada ciclo do loop principal
-intervalo_detecao = 0.001  # segundos entre cada checagem de censura/skip durante filmes
+ultimo_polling = 3  # segundos entre cada ciclo do loop principal
+intervalo_detecao = 0.5  # segundos entre cada checagem de censura/skip durante filmes
 
 # === VERIFICAÇÃO ESTRITA DA TRAVA DE SEGURANÇA ===
 try:
