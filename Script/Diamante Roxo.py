@@ -1554,13 +1554,12 @@ def aba_midias():
                 return
 
             if i < total - 1:
-                # == Pausa Noturna no Skip Manual ==
-                hora_atual = int(time.strftime("%H"))
-                if hora_atual >= 23 or hora_atual <= 6:
-                    print()
-                    log("Horário limite detectado no skip manual. Ativando pausa noturna.")
-                    aba_pausa()
-                    return
+                # == Pausa independente do Oráculo/hora (prioridade máxima) ==
+                # Skip manual entra PAUSE e retorna pelo pausa_retorno do painel
+                print()
+                log("Skip manual detectado. Ativando PAUSE (independente de horário/Oráculo).")
+                aba_pausa()
+                return
             else:
                 visibilidade_fonte(cena, "SESSÃO ID", False)
                 print()
