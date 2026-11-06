@@ -38,7 +38,8 @@ def salvar_no_arquivo(linha_formatada):
     cabecalho_padrao = [
         "#        🚫 SISTEMA DE CENSURAS 🚫",
         "# ====================================================================",
-        '# REGRAS: ("True/False > INÍCIO (HH:MM:SS) > FIM (HH:MM:SS) > CENSURA, TARJA").',
+        '# REGRAS: ("True/False > INÍCIO (HH:MM:SS:MS) > FIM (HH:MM:SS:MS) > CENSURA, TARJA").',
+        "# MS: Opcional. Aceita 3 partes (HH:MM:SS) ou 4 partes (HH:MM:SS:MS).",
         "# SEPARADOR: Usa (;) para colocar mais do que uma censura na mesma linha.",
         "# ====================================================================",
         "",
