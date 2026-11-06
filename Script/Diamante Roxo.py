@@ -60,13 +60,13 @@ except Exception as e:
     print(f"Não foi possível ajustar a prioridade: {e}")
 
 # === CAMINHOS DINÂMICOS ===
-# O script está em 'TWITCH/Script/'. Sobe um nível para 'TWITCH/' onde ficam os .txt de config.
+# O script está em 'Diamante_Roxo/Script/'. Sobe um nível para 'Diamante_Roxo/' onde ficam os .txt de config.
 if getattr(sys, 'frozen', False):
     pasta_sistema = os.path.dirname(sys.executable)  # Pasta 'Script' (onde está o .exe)
 else:
     pasta_sistema = os.path.dirname(os.path.abspath(__file__))  # Pasta 'Script' (onde está o .py)
 
-# Sobe um nível: de 'TWITCH/Script/' para 'TWITCH/', base para todos os arquivos do sistema
+# Sobe um nível: de 'Diamante_Roxo/Script/' para 'Diamante_Roxo/', base para todos os arquivos do sistema
 diretorio_base = os.path.dirname(pasta_sistema)
 
 # === LOG DO SISTEMA (Fica escondido na subpasta junto com o script) ===
@@ -94,7 +94,7 @@ sistema_autorizado = False
 client = None
 event_client = None
 
-# === Rotas para os Arquivos de Controle (Pasta Pai 'TWITCH') ===
+# === Rotas para os Arquivos de Controle (pasta principal) ===
 painel_geral = os.path.join(diretorio_base, "Painel_de_Controle.txt")
 caminho_censura = os.path.join(diretorio_base, "controle_censura.txt")
 
@@ -886,7 +886,7 @@ def esperar(tempo_str, cena_esperada, nome_fonte="FILMES", is_midia=False, durac
     total_segundos = converter_hhmmss(tempo_str)
     if total_segundos is None:
         print()
-        log(f"[ERRO] Tempo invalido no tempo_duracao.txt: {tempo_str!r}. Esperado HH:MM:SS. Pulando este filme.")
+        log(f"[ERRO] Tempo invalido no tempo_duracao.txt: {tempo_str!r}. Esperado HH:MM:SS ou HH:MM:SS:MS. Pulando este filme.")
         return None
     print()
     log(f"Aguardando {tempo_str}...")
@@ -1024,7 +1024,7 @@ def carregar_censuras_do_filme(indice_filme):
                         inicio = converter_hhmmss(definicoes[0])
                         fim = converter_hhmmss(definicoes[1])
                         if inicio is None or fim is None:
-                            raise ValueError("tempo fora do formato HH:MM:SS")
+                            raise ValueError("tempo fora do formato HH:MM:SS ou HH:MM:SS:MS")
                         if fim <= inicio:
                             raise ValueError(f"FIM ({fim}s) precisa ser maior que INICIO ({inicio}s)")
                         # Suporta múltiplas fontes separadas por vírgula
@@ -1226,11 +1226,11 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
         except Exception:
             pass
         
-        # 1.0s entre deteccoes: metade das chamadas ao OBS por hora de filme,
+        # 0.5s entre deteccoes (intervalo_detecao): chamadas ao OBS moderadas por hora de filme,
         # sem atrasar deteccao de skip/censura (o trigger e abrupto, pega na proxima)
         time.sleep(intervalo_detecao)
         
-        # --- Reload dos tempos de cena a cada 1s (fora de MIDIAS) ---
+        # --- Reload dos tempos de cena a cada ciclo (fora de MÍDIAS) ---
         # Isso NÃO interfere no loop de censura/skip, apenas atualiza as variáveis
         # se o painel foi alterado recentemente.
         if not is_midia:
@@ -1528,7 +1528,7 @@ def aba_midias():
             aba_pausa()
             return
         
-        # === Skip manual detectado. Avança o índice e, se for entre 23h-06h, ativa pausa noturna. ===
+        # === Skip manual detectado. Avança o índice e segue para o próximo filme (PAUSE é independente: só por quantidade/manual). ===
         if resultado == "skip_detectado":
             print()
             log("Skip manual detectado durante a reprodução. Pulando para próxima mídia...")
@@ -1630,7 +1630,7 @@ def arquivo_tempo(caminho=None):
                     if converter_hhmmss(linha.split("|")[0]) is None:
                         print()
                         log(f"[AVISO] tempo_duracao.txt linha {numero} ignorada: "
-                            f"duração inválida (esperado HH:MM:SS) -> {linha!r}")
+                            f"duração inválida (esperado HH:MM:SS ou HH:MM:SS:MS) -> {linha!r}")
                         descartadas += 1
                         continue
                     tempos.append(linha)
@@ -1641,7 +1641,7 @@ def arquivo_tempo(caminho=None):
     if descartadas:
         print()
         log(f"[AVISO] tempo_duracao.txt: {descartadas} linha(s) inválida(s) ignorada(s). "
-            f"Confira o formato HH:MM:SS.")
+            f"Confira o formato HH:MM:SS ou HH:MM:SS:MS.")
     if not tempos:
         print()
         log(f"[ERRO] tempo_duracao.txt não tem nenhum tempo válido. O sistema não pode continuar.")
@@ -1686,7 +1686,7 @@ def aba_pausa(modo="oraculo"):
             # Antes isso falhava em silencio: a pausa simplesmente nunca voltava.
             print()
             log(f"[AVISO] Horário de retorno ({chave_retorno}) inválido: {retorno_str!r}. "
-                f"Esperado HH:MM:SS. Esta pausa não terá retorno automático.")
+                f"Esperado HH:MM:SS ou HH:MM:SS:MS. Esta pausa não terá retorno automático.")
             proximo_retorno = None
         else:
             h_r, m_r, s_r, _ = horario_retorno
@@ -1772,7 +1772,7 @@ def horario_de_rerun():
             try:
                 horario_rerun = converter_hhmmss_tupla(ultimo_horario_visto)
                 if horario_rerun is None:
-                    raise ValueError(f"horário inválido (esperado HH:MM:SS): {ultimo_horario_visto!r}")
+                    raise ValueError(f"horário inválido (esperado HH:MM:SS ou HH:MM:SS:MS): {ultimo_horario_visto!r}")
                 h, m, s, _ = horario_rerun
                 agora = datetime.now()
                 momento_final = (agora + timedelta(days=ultimos_dias_vistos)).replace(hour=h, minute=m, second=s, microsecond=0)
