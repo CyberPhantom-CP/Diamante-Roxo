@@ -1149,7 +1149,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             for salto in lista_saltos:
                 if not salto["feito"] and decorrido >= salto["gatilho"]:
                     try:
-                        ms_destino = salto["destino"] * 1000
+                        ms_destino = int(salto["destino"] * 1000)
                         client.set_media_input_cursor(nome_fonte, ms_destino)
                         print()
                         log(f"Pós-crédito detectado! Saltando para: {salto['destino']}s")
@@ -1436,15 +1436,16 @@ def aba_midias():
                 if ">" in def_salto:
                     s = def_salto.split(">")
                     try:
-                        # Extrai a hora de Gatilho
-                        h_g, m_g, s_g = map(int, s[0].strip().split(":"))
-                        # Extrai a hora de Destino
-                        h_d, m_d, s_d = map(int, s[1].strip().split(":"))
-                        
+                        # Extrai gatilho e destino aceitando HH:MM:SS e HH:MM:SS:MS (3 ou 4 partes)
+                        gatilho = converter_hhmmss(s[0])
+                        destino = converter_hhmmss(s[1])
+                        if gatilho is None or destino is None:
+                            raise ValueError("tempo fora do formato HH:MM:SS ou HH:MM:SS:MS")
+
                         # Alimenta a lista de saltos do pacote novo
                         lista_saltos.append({
-                            "gatilho": h_g*3600 + m_g*60 + s_g, 
-                            "destino": h_d*3600 + m_d*60 + s_d, 
+                            "gatilho": gatilho,
+                            "destino": destino,
                             "feito": False
                         })
                     except Exception as e:
