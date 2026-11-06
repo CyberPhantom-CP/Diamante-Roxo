@@ -1,16 +1,16 @@
 # ====================================================================
 #  SISTEMA DE TEMPOS
 # ====================================================================
-#  FORMATO   :  DURAÇÃO (HH:MM:SS) | GATILHO > DESTINO ; GATILHO > DESTINO
+#  FORMATO   :  DURAÇÃO (HH:MM:SS:MS) | GATILHO (HH:MM:SS:MS) > DESTINO (HH:MM:SS:MS) ; GATILHO > DESTINO
 #  DURAÇÃO   :  Tempo do filme sem créditos. Obrigatório.
 #  APÓS O |  :  Saltos pós-crédito. Opcional, vários separados por (;).
+#  MS        :  Opcional. Aceita 3 partes (HH:MM:SS) ou 4 partes (HH:MM:SS:MS).
 #
-#  EXEMPLO   :  00:00:00 | 00:00:00 > 00:00:00 ; 00:00:00 > 00:00:00
-#  EXEMPLO   :  00:00:00
+#  EXEMPLO   :  00:00:00:000 | 00:00:00:000 > 00:00:00:000 ; 00:00:00 > 00:00:00
+#  EXEMPLO   :  00:00:00:000
+#  EXEMPLO   :  00:00:00 | 00:10:00:000 > 00:27:40:400
 # ====================================================================
 
 # ==== Bloco de Tempos ====
-01:29:50
-01:52:10
-01:40:40
-01:43:20
+01:48:00
+01:24:00:000
