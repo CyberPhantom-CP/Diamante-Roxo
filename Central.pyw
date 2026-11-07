@@ -59,7 +59,6 @@ CAMPOS = [
     ("Agendamentos", "iniciar_midias", "Iniciar midias (modo estudo)", "tempo"),
     ("Agendamentos", "mixitup", "MixItUp", "tempo"),
     ("Agendamentos", "streamerbot", "Streamer.bot", "tempo"),
-    ("Agendamentos", "kickerino", "Kickerino", "tempo"),
     ("Agendamentos", "chatty", "Chatty", "tempo"),
     ("Agendamentos", "obs64studio", "OBS 64 Studio", "tempo"),
     ("Agendamentos", "minimizar_janelas", "Minimizar janelas", "tempo"),
@@ -259,7 +258,7 @@ class CentralApp:
         self._montar_aba_formulario("OBS")
         self._montar_aba_grupos(
             "Agendamentos",
-            [("APPS", ["mixitup", "streamerbot", "kickerino", "chatty",
+            [("APPS", ["mixitup", "streamerbot", "chatty",
                         "obs64studio", "minimizar_janelas"]),
              ("SISTEMA / OBS", ["start_sistema", "iniciar_midias"])],
         )
