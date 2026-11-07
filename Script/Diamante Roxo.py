@@ -10,11 +10,10 @@
 #   - Streamer.bot     Automação de eventos, comandos e alertas
 #   - Mix It Up        Chat, comandos e interatividade
 #   - Chatty           Cliente de chat com moderação
-#   - Kickerino        Cliente de chat da Kick
 # ====================================================================
 # Plataformas:
 #   - Twitch  Todos os apps (Mix It Up, Chatty, Streamer.bot, OBS)
-#   - Kick    Streamer.bot, Kickerino e OBS
+#   - Kick    Streamer.bot e OBS
 # Modos de operação:
 #   - FILMES  Reprodução de mídia com censura por tempo e saltos
 #   - RERUN   Retransmissão ao vivo com contagem regressiva
@@ -186,12 +185,6 @@ def localizar_software(nome_exe):
             r"%LocalAppData%\Chatty\Chatty.exe",
             r"%AppData%\Chatty\Chatty.exe",
         ],
-        # Kickerino (cliente de chat da Kick): a pasta de instalação carrega a
-        # versão no nome (ex.: Kickerino_1.43_Windows), então usamos wildcard
-        # para não quebrar a cada atualização do app.
-        "Kickerino.exe": [
-            r"%UserProfile%\Documents\Kickerino_*\Kickerino\Kickerino.exe",
-        ],
     }
     caminhos = mapa.get(nome_exe, [])
     for caminho in caminhos:
@@ -254,9 +247,8 @@ app_obs64studio = localizar_software("obs64.exe")
 app_streamerbot = localizar_software("Streamer.bot.exe")
 app_mixitup = localizar_software("MixItUp.exe")
 app_chatty = localizar_software("Chatty.exe")
-app_kickerino = localizar_software("Kickerino.exe")
 
-for nome, caminho in [("OBS Studio", app_obs64studio), ("Streamer.bot", app_streamerbot), ("Mix It Up", app_mixitup), ("Chatty", app_chatty), ("Kickerino", app_kickerino)]:
+for nome, caminho in [("OBS Studio", app_obs64studio), ("Streamer.bot", app_streamerbot), ("Mix It Up", app_mixitup), ("Chatty", app_chatty)]:
     if caminho:
         log(f"{nome} encontrado: {caminho}")
     else:
@@ -325,21 +317,6 @@ def start_chatty():
         print()
         log("Erro: Chatty não encontrado.")
 
-def start_kickerino():
-    if verificar_app_start("Kickerino.exe"):
-        log("Kickerino já está em execução. Pulando...")
-        return
-    if app_kickerino:
-        # cwd na pasta do app: o Kickerino carrega DLLs e o kick_config.json
-        # a partir do próprio diretório, então precisa ser iniciado de lá.
-        pasta_padrao = os.path.dirname(app_kickerino)
-        subprocess.Popen(app_kickerino, cwd=pasta_padrao)
-        print()
-        log("Kickerino iniciado com sucesso!")
-    else:
-        print()
-        log("Erro: Kickerino não encontrado.")
-
 def minimizar_janelas():
     print()
     log("Minimizando janelas...")
@@ -371,13 +348,6 @@ def minimizar_janelas():
         log("Janela do Chatty minimizada.")
     except Exception:
         pass
-
-    # === Kickerino ===  # TEMPORÁRIO (sem Kickerino) — para restaurar, descomentar
-    # try:
-    #     Desktop(backend="uia").window(title_re="^Kickerino.*", visible_only=True).minimize()
-    #     log("Janela do Kickerino minimizada.")
-    # except Exception:
-    #     pass
 
 # 4) Interno do OBS Studio.
 
@@ -2057,11 +2027,6 @@ def verificar_agendamento():
                 schedule.every().day.at(config.get("mixitup")).do(start_mixitup)
             if config.get("chatty", ""):
                 schedule.every().day.at(config.get("chatty")).do(start_chatty)
-        # TEMPORÁRIO (sem Kickerino): bloco desativado — para restaurar, descomentar.
-        # if global_plataforma in ("kick",):
-        #     # Kickerino é o cliente de chat da Kick (equivalente ao Chatty do Twitch).
-        #     if config.get("kickerino", ""):
-        #         schedule.every().day.at(config.get("kickerino")).do(start_kickerino)
         if config.get("streamerbot", ""):
             schedule.every().day.at(config.get("streamerbot")).do(start_streamerbot)
         if config.get("obs64studio", ""):
