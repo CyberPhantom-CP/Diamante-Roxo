@@ -1045,6 +1045,8 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
     
     proximo_recusado = False  
     playback_state_atual = None
+    ultimo_cursor = None
+    contagem_parado = 0
     resultado_final = "normal"
 
     while True:
@@ -1060,6 +1062,11 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     playback_state_atual = status_obs.playbackState
                 if cursor_atual is not None:
                     decorrido = cursor_atual / 1000.0
+                    if ultimo_cursor is not None and cursor_atual == ultimo_cursor:
+                        contagem_parado += 1
+                    else:
+                        contagem_parado = 0
+                    ultimo_cursor = cursor_atual
 
                     if decorrido_total > 0 and decorrido < decorrido_total - 5:
                         try:
@@ -1197,6 +1204,8 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             fim_str = fim_dt.strftime("%H:%M")
             em_resgate = event_client and event_client.resgate_em_andamento
             pausado_media = playback_state_atual is not None and "pause" in str(playback_state_atual).lower()
+            if is_midia and contagem_parado >= 2:
+                pausado_media = True
             estado = "Pausado" if (em_resgate or pausado_media) else "Rodando"
             corte = "Sim" if proximo_recusado else "Não"
             saltos_total = len(lista_saltos) if (is_midia and lista_saltos) else 0
