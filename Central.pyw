@@ -31,8 +31,8 @@ OPCOES = {
     "oraculo_ativado": ["yes", "no"],
 }
 
-# Valores aceitos mas NAO oferecidos no menu (uso manual no .txt).
-# Ex.: "teste" faz o mesmo que "gravar"; continua valido e nao fica vermelho.
+# Valores aceitos mas NÃO oferecidos no menu (uso manual no .txt).
+# Ex.: "teste" faz o mesmo que "gravar"; continua válido e não fica vermelho.
 ACEITOS = {
     "modo_sistema": ["teste"],
 }
@@ -40,23 +40,23 @@ ACEITOS = {
 CAMPOS = [
     ("Modo", "modo_sistema", "Modo do sistema", "enum"),
     ("Modo", "plataforma", "Plataforma", "enum"),
-    ("Modo", "modo_conteudo", "Conteudo", "enum"),
+    ("Modo", "modo_conteudo", "Conteúdo", "enum"),
     ("Modo", "modo_destino", "Destino (modo estudo)", "enum"),
-    ("Modo", "modo_raid", "Cena apos alerta RAID", "enum"),
-    ("Modo", "saida_rerun", "Saida do rerun", "enum"),
+    ("Modo", "modo_raid", "Cena após alerta RAID", "enum"),
+    ("Modo", "saida_rerun", "Saída do rerun", "enum"),
     ("Modo", "rerun_dias", "Dias do rerun", "int"),
-    ("Modo", "rerun_horario_final", "Horario final do rerun", "tempo"),
-    ("Pausa", "oraculo_ativado", "Oraculo (corte apos 23h)", "bool"),
-    ("Pausa", "pausa_apos_filmes", "Pausa apos N filmes (0 = off)", "int"),
+    ("Modo", "rerun_horario_final", "Horário final do rerun", "tempo"),
+    ("Pausa", "oraculo_ativado", "Oráculo (corte após 23h)", "bool"),
+    ("Pausa", "pausa_apos_filmes", "Pausa após N filmes (0 = off)", "int"),
     ("Pausa", "pausa_retorno", "Retorno da pausa", "tempo"),
     ("Pausa", "oraculo_retorno", "Retorno do oraculo", "tempo"),
-    ("Pausa", "retornar_midias", "Retorno agendado - Midias (se em PAUSA)", "tempo"),
-    ("Pausa", "encerrar_apos_filmes", "Encerrar apos N filmes (0 = off)", "int"),
+    ("Pausa", "retornar_midias", "Retorno agendado - Mídias (se em PAUSA)", "tempo"),
+    ("Pausa", "encerrar_apos_filmes", "Encerrar após N filmes (0 = off)", "int"),
     ("OBS", "obs_host", "Host", "host"),
     ("OBS", "obs_port", "Porta", "port"),
     ("OBS", "obs_password", "Senha", "senha"),
     ("Agendamentos", "start_sistema", "Iniciar sistema", "tempo"),
-    ("Agendamentos", "iniciar_midias", "Iniciar midias (modo estudo)", "tempo"),
+    ("Agendamentos", "iniciar_midias", "Iniciar mídias (modo estudo)", "tempo"),
     ("Agendamentos", "mixitup", "MixItUp", "tempo"),
     ("Agendamentos", "streamerbot", "Streamer.bot", "tempo"),
     ("Agendamentos", "chatty", "Chatty", "tempo"),
@@ -411,7 +411,7 @@ class CentralApp:
         """Executa o .bat que dispara a task agendada 'Diamante Roxo'."""
         bat_path = os.path.join(PASTA_PADRAO, "Diamante Roxo (Execução manual).bat")
         if not os.path.exists(bat_path):
-            self._status(f"Arquivo .bat nao encontrado: {bat_path}", COR_ERRO)
+            self._status(f"Arquivo .bat não encontrado: {bat_path}", COR_ERRO)
             return
         try:
             # Popen sem esperar, detached, na mesma pasta
@@ -429,7 +429,7 @@ class CentralApp:
         self.valores = ler_painel(CAMINHO_PAINEL)
         self.valores = {k: _canonizar(k, v) for k, v in self.valores.items()}
         if not self.valores:
-            self._status("Aviso: Painel_de_Controle.txt nao encontrado ao lado deste arquivo. "
+            self._status("Aviso: Painel_de_Controle.txt não encontrado ao lado deste arquivo. "
                          "Campos em branco; o primeiro salvamento cria o arquivo.", COR_AVISO)
         for chave, (widget, tipo) in self.campos.items():
             valor = self.valores.get(chave, "")

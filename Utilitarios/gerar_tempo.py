@@ -1,6 +1,6 @@
-# Extraindo a duracao dos videos
+# Extraindo a duração dos vídeos
 
-# === Importacoes ===
+# === Importações ===
 import os, sys, subprocess
 
 # Preencha com o caminho completo da pasta do Diamante Roxo, ex.:
@@ -9,8 +9,8 @@ PASTA_SCRIPT_PRINCIPAL = r"SEU_CAMINHO_DO_DIAMANTE_ROXO_AQUI"
 ARQUIVO_TEMPOS = os.path.join(PASTA_SCRIPT_PRINCIPAL, "tempo_duracao.txt")
 ARQUIVO_CENSURA = os.path.join(PASTA_SCRIPT_PRINCIPAL, "controle_censura.txt")
 
-# Cabecalho padrao do tempo_duracao.txt. Escrito sempre ao final, para o arquivo
-# ficar sempre documentado (mesmo padrao do controle_censura.txt).
+# Cabeçalho padrão do tempo_duracao.txt. Escrito sempre ao final, para o arquivo
+# ficar sempre documentado (mesmo padrão do controle_censura.txt).
 CABECALHO_TEMPOS = [
     "# ====================================================================",
     "#  SISTEMA DE TEMPOS",
@@ -28,7 +28,7 @@ CABECALHO_TEMPOS = [
     "# ==== Bloco de Tempos ====",
 ]
 
-# Mantido como esta: o reset da censura continua definido por "False | ".
+# Mantido como está: o reset da censura continua definido por "False | ".
 CABECALHO_CENSURA = [
     "# SISTEMA DE CENSURAS",
     "# ====================================================================",
@@ -41,10 +41,10 @@ CABECALHO_CENSURA = [
 ]
 
 def separar_arquivo_tempos(caminho):
-    """Separa o bloco de comentarios das linhas de dados.
+    """Separa o bloco de comentários das linhas de dados.
 
-    O cabecalho padrao e sempre reescrito no final, entao as copias dele que
-    estiverem no arquivo sao descartadas. Comentarios do usuario sao preservados.
+    O cabeçalho padrão é sempre reescrito no final, então as cópias dele que
+    estiverem no arquivo são descartadas. Comentários do usuário são preservados.
     """
     comentarios = []
     dados = []
@@ -67,7 +67,7 @@ def separar_arquivo_tempos(caminho):
     return comentarios, dados
 
 def gravar_tempos(caminho, comentarios, dados):
-    """Grava cabecalho + comentarios do usuario + linhas de dados."""
+    """Grava cabeçalho + comentários do usuário + linhas de dados."""
     partes = list(CABECALHO_TEMPOS)
     if comentarios:
         partes.append("")
