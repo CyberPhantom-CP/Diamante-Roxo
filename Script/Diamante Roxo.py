@@ -73,16 +73,24 @@ dia_da_sessao = time.strftime("%Y-%m-%d")
 nome_ficheiro = f"relatório_{dia_da_sessao}.log"
 caminho_log   = os.path.join(pasta_sistema, nome_ficheiro)
 
+try:
+    _log_handle = open(caminho_log, "a", encoding="utf-8")
+except Exception:
+    _log_handle = None
+_log_lock = threading.Lock()
+
 def log(msg):
     horario = time.strftime("%H:%M:%S")
     print(f"{horario} - {msg}", flush=True)
-    
-    try:
-        with open(caminho_log, "a", encoding="utf-8") as f:
-            horario_full = time.strftime("%Y-%m-%d %H-%M-%S")
-            f.write(f"{horario_full} - INFO - {msg}\n")
-    except Exception as e:
-        print(f"{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}", flush=True)
+
+    if _log_handle is not None:
+        try:
+            with _log_lock:
+                horario_full = time.strftime("%Y-%m-%d %H-%M-%S")
+                _log_handle.write(f"{horario_full} - INFO - {msg}\n")
+                _log_handle.flush()
+        except Exception as e:
+            print(f"{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}", flush=True)
 
 log("Inicializando o Diamante Roxo...")
 
