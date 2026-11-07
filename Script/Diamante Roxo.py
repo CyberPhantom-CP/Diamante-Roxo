@@ -372,12 +372,12 @@ def minimizar_janelas():
     except Exception:
         pass
 
-    # === Kickerino ===
-    try:
-        Desktop(backend="uia").window(title_re="^Kickerino.*", visible_only=True).minimize()
-        log("Janela do Kickerino minimizada.")
-    except Exception:
-        pass
+    # === Kickerino ===  # TEMPORÁRIO (sem Kickerino) — para restaurar, descomentar
+    # try:
+    #     Desktop(backend="uia").window(title_re="^Kickerino.*", visible_only=True).minimize()
+    #     log("Janela do Kickerino minimizada.")
+    # except Exception:
+    #     pass
 
 # 4) Interno do OBS Studio.
 
@@ -2057,10 +2057,11 @@ def verificar_agendamento():
                 schedule.every().day.at(config.get("mixitup")).do(start_mixitup)
             if config.get("chatty", ""):
                 schedule.every().day.at(config.get("chatty")).do(start_chatty)
-        if global_plataforma in ("kick",):
-            # Kickerino é o cliente de chat da Kick (equivalente ao Chatty do Twitch).
-            if config.get("kickerino", ""):
-                schedule.every().day.at(config.get("kickerino")).do(start_kickerino)
+        # TEMPORÁRIO (sem Kickerino): bloco desativado — para restaurar, descomentar.
+        # if global_plataforma in ("kick",):
+        #     # Kickerino é o cliente de chat da Kick (equivalente ao Chatty do Twitch).
+        #     if config.get("kickerino", ""):
+        #         schedule.every().day.at(config.get("kickerino")).do(start_kickerino)
         if config.get("streamerbot", ""):
             schedule.every().day.at(config.get("streamerbot")).do(start_streamerbot)
         if config.get("obs64studio", ""):
