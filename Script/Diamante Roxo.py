@@ -925,10 +925,10 @@ timeline_vlc_global = -1
 
 # === SISTEMA DE CENSURA DINÂMICA ===
 def converter_hhmmss_tupla(texto):
-    """Valida 'HH:MM:SS' ou 'HH:MM:SS:MS' e devolve (h, m, s, ms), ou None se for invalido.
+    """Valida 'HH:MM:SS' ou 'HH:MM:SS:MS' e devolve (h, m, s, ms), ou None se for inválido.
 
-    ms eh opcional: se nao houver, devolve 0. Usado para duracoes de filme,
-    censura e tempos de cena, onde a precisao de milissegundos importa.
+    MS é opcional: se não houver, devolve 0. Usado para durações de filme,
+    censura e tempos de cena, onde a precisão de milissegundos importa.
     """
     partes = texto.strip().split(":")
     if len(partes) not in (3, 4):
@@ -946,9 +946,9 @@ def converter_hhmmss_tupla(texto):
 def converter_hhmmss(texto):
     """Converte 'HH:MM:SS' ou 'HH:MM:SS:MS' em segundos (float se houver MS).
 
-    Devolve None quando o formato nao e valido, em vez de estourar erro.
+    Devolve None quando o formato não é válido, em vez de estourar erro.
     Usado para validar o tempo_duracao.txt e o controle_censura.txt antes
-    de qualquer conta, para que um .txt mal digitado nao derrube a sessao.
+    de qualquer conta, para que um .txt mal digitado não derruba a sessão.
     """
     horario = converter_hhmmss_tupla(texto)
     if horario is None:
@@ -1005,7 +1005,7 @@ def carregar_censuras_do_filme(indice_filme):
                         if not lista_fontes:
                             raise ValueError("nenhuma fonte informada")
                     except Exception as erro:
-                        # Um trecho ruim nao descarta os outros do mesmo filme
+                        # Um trecho ruim não descarta os outros do mesmo filme
                         print()
                         log(f"[AVISO] Filme {indice_filme + 1}: trecho de censura descartado "
                             f"({erro}) -> {bloco.strip()!r}")
@@ -1030,7 +1030,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
     inicio = time.time()
-    inicio_linha = time.strftime("%H:%M")  # Fixo: horario que esta secao comecou
+    inicio_linha = time.strftime("%H:%M")  # Fixo: horário em que esta seção começou
     
     if is_midia:
         timeline_vlc_global = -1
@@ -1067,14 +1067,14 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 else:
                     decorrido = decorrido_total + (agora - inicio)
             except Exception:
-                # Conexao com OBS caiu durante o filme: pausar, salvar posicao e tentar reconectar
+                # Conexão com o OBS caiu durante o filme: pausar, salvar posição e tentar reconectar
                 print()
-                log("[ERRO] Conexao com OBS perdida durante a reproducao. Pausando filme e tentando reconectar...")
+                log("[ERRO] Conexão com o OBS perdida durante a reprodução. Pausando o filme e tentando reconectar...")
                 try:
                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
-                    log("[RECONEXAO] Filme pausado devido a perda de conexao com OBS.")
+                    log("[RECONEXAO] Filme pausado devido à perda de conexão com o OBS.")
                 except Exception:
-                    pass  # Se nao conseguiu pausar, segue tentando reconectar
+                    pass  # Se não conseguiu pausar, segue tentando reconectar
                 
                 # Loop de reconexao ao OBS
                 while not encerrar_sistema and not _reconectando_obs:
@@ -1173,11 +1173,11 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
 
         # ENTRADA é curta (9s) — não mostra countdown, só a mensagem inicial
         if cena_esperada != "ENTRADA":
-            # Exibicao arredonda pra cima: digitou 00:05:05, comeca mostrando
-            # 00:05:05 (e nao 00:05:04). O 'restante' logico la em cima continua no
-            # piso pra nao mexer nos cortes do oraculo/pausa, e o horario REAL de fim
-            # nao muda (o break segue sendo decorrido >= segundos) — muda so o numero
-            # da ultima tela: 00:00:01 em vez de 00:00:00.
+            # Exibição arredonda para cima: digitou 00:05:05, começa mostrando
+            # 00:05:05 (e não 00:05:04). O 'restante' lógico lá em cima continua no
+            # piso, para não mexer nos cortes do Oráculo/pausa, e o horário REAL de fim
+            # não muda (o break segue sendo decorrido >= segundos) — muda só o número
+            # da última tela: 00:00:01 em vez de 00:00:00.
             restante_exib = math.ceil(segundos - decorrido)
             mins, secs = divmod(restante_exib, 60)
             horas, mins = divmod(mins, 60)
@@ -1221,8 +1221,8 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     global_duracao_raid    = config.get("duracao_raid",    global_duracao_raid).strip()
                     global_duracao_final   = config.get("duracao_final",   global_duracao_final).strip()
 
-                    # Aplica na hora na cena EM EXECUCAO (INICIO / RAID / FINAL).
-                    # ENTRADA e midias ficam fora de proposito.
+                    # Aplica na hora na cena EM EXECUÇÃO (INÍCIO / RAID / FINAL).
+                    # ENTRADA e MÍDIAS ficam fora de propósito.
                     chave_tempo = {"INÍCIO": "duracao_inicio",
                                    "RAID": "duracao_raid",
                                    "FINAL": "duracao_final"}.get(cena_esperada)
@@ -1233,10 +1233,10 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                             log(f"Tempo {cena_esperada} alterado em cena: {segundos}s -> {valor_tempo} "
                                 "(contagem reiniciada)")
                             segundos = novo_segundos
-                            # Zera o que ja correu: o cronometro volta pro valor
-                            # digitado (decorrido = decorrido_total + agora - inicio;
-                            # com decorrido_total = 0 em cena nao-midia, recalcular
-                            # a partir de 'inicio = agora' zera o decorrido).
+                            # Zera o que já correu: o cronômetro volta para o valor
+                            # digitado (decorrido = decorrido_total + agora - início;
+                            # com decorrido_total = 0 em cena não-MÍDIAS, recalcular
+                            # a partir de 'início = agora' zera o decorrido).
                             inicio = time.time()
 
                     ultima_modificacao_tempos = mtempo
@@ -1430,13 +1430,13 @@ def aba_midias():
         # === CALCULAR A DURAÇÃO DO PRÓXIMO FILME EM SEGUNDOS ===
         duracao_proximo_seg = 0
         if i + 1 < total:  
-            # Pelo helper validado: se o proximo tempo vier quebrado, o filme
-            # atual segue rodando sem antecipacao em vez de derrubar o laco.
+            # Pelo helper validado: se o próximo tempo vier quebrado, o filme
+            # atual segue rodando sem antecipação em vez de derrubar o laço.
             proximo_seg = converter_hhmmss(tempos[i+1].split("|")[0])
             if proximo_seg is None:
                 print()
-                log(f"[AVISO] SESSÃO {i+1:02d}: nao foi possivel ler a duracao do proximo "
-                    f"filme ({tempos[i+1]!r}). Seguindo sem tempo de antecipacao.")
+                log(f"[AVISO] SESSÃO {i+1:02d}: não foi possível ler a duração do próximo "
+                    f"filme ({tempos[i+1]!r}). Seguindo sem tempo de antecipação.")
             else:
                 duracao_proximo_seg = proximo_seg
 
@@ -1721,13 +1721,13 @@ def aba_pausa(modo="oraculo"):
             rotear_pulo()
             return
 
-        # 3s entre deteccoes na pausa: o usuario nao esta interagindo, nao precisa de reflexo rapido
+        # 3s entre detecções na pausa: o usuário não está interagindo, não precisa de reflexo rápido
         time.sleep(3)
 
 def auto_retorno_midias():
     try:
         if global_modo_conteudo == "rerun":
-            log("retornar_midias ignorado — modo RERUN ativo")
+            log("Retornar Mídias ignorado — modo RERUN ativo")
             return
         # Prioridade: pausa interna (X/Y) ganha do agendado (05:00)
         if global_pausa_modo_atual is not None:
@@ -1749,7 +1749,7 @@ def auto_retorno_midias():
 def horario_de_rerun():
     global global_rerun_horario_final, global_rerun_dias
 
-    inicio_linha = time.strftime("%H:%M")  # Fixo: horario que o RERUN comecou
+    inicio_linha = time.strftime("%H:%M")  # Fixo: horário em que o RERUN começou
     
     ultimo_horario_visto = None
     ultimos_dias_vistos = None
@@ -2148,13 +2148,13 @@ def restaurar_cena_perfil_obs():
 while not encerrar_sistema:
     verificar_agendamento()  # Verifica a cada ciclo para detectar mudanças no arquivo
     
-    # === Reconexao automatica ao OBS caso a conexao caia durante a transmissao ===
+    # === Reconexão automática ao OBS caso a conexão caia durante a transmissão ===
     try:
         if client is not None:
-            # Testa se a conexao ainda esta viva
+            # Testa se a conexão ainda está viva
             client.get_current_program_scene()
         elif client is None and not _reconectando_obs:
-            # Tentativa de reconectar ao OBS sem flood (so tenta se nao estiver ja tentando)
+            # Tentativa de reconectar ao OBS sem flood (só tenta se não estiver já tentando)
             _reconectando_obs = True
             try:
                 import sys as _sys, io as _io
@@ -2194,7 +2194,7 @@ while not encerrar_sistema:
     try:
         schedule.run_pending()
     except Exception as e:
-        # Um app que falhou ao abrir (permissao, caminho, etc) nao pode derrubar o sistema
+        # Um app que falhou ao abrir (permissão, caminho, etc.) não pode derrubar o sistema
         log(f"[ERRO] Falha ao executar tarefa agendada: {e}")
         time.sleep(5)                      # Evita loop apertado se o erro se repetir
     time.sleep(ultimo_polling)             # 3s entre ciclos para reduzir carga na CPU
