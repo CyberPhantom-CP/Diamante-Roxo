@@ -43,7 +43,7 @@ Projeto pessoal de uso contínuo em lives reais. Configuração 100% por arquivo
 - **Oráculo de horário**: recusa o próximo filme quando cruzar 23h, com retorno independente (`oraculo_retorno`)
 - **Pausa por quantidade** de filmes, com retorno independente (`pausa_retorno`)
 - **Retornos com prioridade interna**: `retornar_midias` (agendado) só age em PAUSE manual; watchdog de 60s força retorno se `X/Y` falhar
-- **Detecção de queda de stream**: pausa o filme e retoma após 3s de estabilidade
+- **Detecção de queda de stream**: pausa o filme e tenta reconectar automaticamente
 - **Fontes de texto dinâmicas** no OBS (SESSÃO ID)
 - **Log diário** completo de todas as ações
 - Ajuste automático de prioridade do processo
@@ -98,7 +98,7 @@ Ambos usam caminho hardcoded: preencha a constante `PASTA_*` no topo antes de ex
 ## Requisitos
 
 - Windows (utiliza `pywinauto`, `psutil` e `schedule`)
-- Python 3.10+ (testado no 3.13)
+- Python 3.10+ (testado no 3.14)
 - OBS Studio com WebSocket habilitado (porta padrão 4455)
 - Streamer.bot / Mix It Up / Chatty (conforme a plataforma)
 - **FFmpeg** (para `ffprobe` no `gerar_tempo.py`)
