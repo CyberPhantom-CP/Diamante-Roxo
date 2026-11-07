@@ -1196,7 +1196,10 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             saltos_feitos = sum(1 for s in lista_saltos if s.get("feito")) if saltos_total else 0
             saltos_str = f"{saltos_feitos}/{saltos_total}" if saltos_total else "0/0"
             # \r no início garante posicionamento correto mesmo após outros logs
-            print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Pós-créditos: {saltos_str} | Corte: {corte} | {estado} | Fim: {fim_str}   ", end="", flush=True)
+            if is_midia:
+                print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Pós-créditos: {saltos_str} | Corte: {corte} | {estado} | Fim: {fim_str}   ", end="", flush=True)
+            else:
+                print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Fim: {fim_str}   ", end="", flush=True)
         
         try:
             if cena_ativa_obs() != cena_esperada:
