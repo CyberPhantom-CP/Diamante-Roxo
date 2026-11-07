@@ -154,8 +154,8 @@ global_pausa_apos_filmes = 0
 global_pausa_retorno = "05:00:00"
 global_oraculo_retorno = "05:00:00"
 global_encerrar_apos_filmes = 0
-global_pausa_modo_atual = None  # None = sem pausa interna ativa (PAUSE manual); "quantidade"/"oraculo" = pausa interna ativa
-TOLERANCIA_RETORNO_SEGUNDOS = 60  # watchdog: se não voltar X/Y + 60s, força retorno
+global_pausa_modo_atual = None  # None = PAUSE manual; "quantidade"/"oraculo" = pausa interna ativa
+TOLERANCIA_RETORNO_SEGUNDOS = 60  # watchdog: forçar retorno X/Y + 60s se não voltar
 
 # === Sistema do Rerun ===
 global_rerun_dias = 1
@@ -1706,10 +1706,10 @@ def aba_pausa(modo="oraculo"):
             rotear_pulo()
             return
 
-        # == Watchdog reserva: se não voltar X/Y + 60s, força retorno ==
+        # Watchdog: se X/Y não voltar em 60s, força MÍDIAS
         if proximo_retorno and datetime.now() >= proximo_retorno + timedelta(seconds=TOLERANCIA_RETORNO_SEGUNDOS):
             print()
-            log(f"[WATCHDOG] Retorno {chave_retorno} falhou/nao trocou apos {TOLERANCIA_RETORNO_SEGUNDOS}s. Forcando retorno a MÍDIAS.")
+            log(f"[WATCHDOG] Retorno ({chave_retorno}) não aconteceu em {TOLERANCIA_RETORNO_SEGUNDOS}s. Forçando MÍDIAS.")
             global_pausa_modo_atual = None
             trocar_cena("MÍDIAS")
             time.sleep(0.5)
@@ -1729,10 +1729,9 @@ def auto_retorno_midias():
         if global_modo_conteudo == "rerun":
             log("retornar_midias ignorado — modo RERUN ativo")
             return
-        # Prioridade máxima dos retornos internos: se há pausa por quantidade/oráculo ativa,
-        # o horário agendado (ex.: 05:00) não deve atropelar o retorno X/Y (ex.: 09:00).
+        # Prioridade: pausa interna (X/Y) ganha do agendado (05:00)
         if global_pausa_modo_atual is not None:
-            log(f"retornar_midias ignorado — pausa interna ativa ({global_pausa_modo_atual}), retorno interno tem prioridade.")
+            log(f"Retornar Mídias ignorado: pausa interna ({global_pausa_modo_atual}) tem prioridade.")
             return
         if cena_ativa_obs() == "PAUSA":
             print()
