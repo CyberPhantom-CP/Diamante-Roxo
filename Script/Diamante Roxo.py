@@ -1171,7 +1171,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 resultado_final = "pausa_quantidade"
                 break
 
-        # ENTRADA é curta (9s) — não mostra countdown, só a mensagem inicial
+        # ENTRADA é curta (9s) — não mostra contagem regressiva, só a mensagem inicial
         if cena_esperada != "ENTRADA":
             # Exibição arredonda para cima: digitou 00:05:05, começa mostrando
             # 00:05:05 (e não 00:05:04). O 'restante' lógico lá em cima continua no
@@ -1185,9 +1185,12 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             fim_dt = agora_dt + timedelta(seconds=restante_exib)
             fim_str = fim_dt.strftime("%H:%M")
             estado = "Pausado" if (event_client and event_client.resgate_em_andamento) else "Rodando"
-            corte = "Sim" if proximo_recusado else "Nao"
+            corte = "Sim" if proximo_recusado else "Não"
+            saltos_total = len(lista_saltos) if (is_midia and lista_saltos) else 0
+            saltos_feitos = sum(1 for s in lista_saltos if s.get("feito")) if saltos_total else 0
+            saltos_str = f"{saltos_feitos}/{saltos_total}" if saltos_total else "0/0"
             # \r no início garante posicionamento correto mesmo após outros logs
-            print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Corte: {corte} | {estado} | Fim: {fim_str}   ", end="", flush=True)
+            print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Corte: {corte} | {estado} | Fim: {fim_str} | Pós-créditos: {saltos_str}   ", end="", flush=True)
         
         try:
             if cena_ativa_obs() != cena_esperada:
