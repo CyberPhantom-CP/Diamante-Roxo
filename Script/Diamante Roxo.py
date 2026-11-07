@@ -106,7 +106,7 @@ painel_geral = os.path.join(diretorio_base, "Painel_de_Controle.txt")
 caminho_censura = os.path.join(diretorio_base, "controle_censura.txt")
 
 ultima_modificacao = 0
-ultimo_polling = 3  # segundos entre cada ciclo do loop principal
+ultimo_polling = 1  # segundos entre cada ciclo do loop principal
 intervalo_detecao = 0.5  # segundos entre cada checagem de censura/skip durante filmes
 
 # === VERIFICAÇÃO ESTRITA DA TRAVA DE SEGURANÇA ===
@@ -1732,8 +1732,8 @@ def aba_pausa(modo="oraculo"):
             rotear_pulo()
             return
 
-        # 3s entre detecções na pausa: o usuário não está interagindo, não precisa de reflexo rápido
-        time.sleep(3)
+        # 1s entre detecções na pausa: o usuário não está interagindo, não precisa de reflexo rápido
+        time.sleep(1)
 
 def auto_retorno_midias():
     try:
@@ -2208,4 +2208,4 @@ while not encerrar_sistema:
         # Um app que falhou ao abrir (permissão, caminho, etc.) não pode derrubar o sistema
         log(f"[ERRO] Falha ao executar tarefa agendada: {e}")
         time.sleep(5)                      # Evita loop apertado se o erro se repetir
-    time.sleep(ultimo_polling)             # 3s entre ciclos para reduzir carga na CPU
+    time.sleep(ultimo_polling)             # 1s entre ciclos para reduzir carga na CPU
