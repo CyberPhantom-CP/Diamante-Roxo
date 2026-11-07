@@ -1,4 +1,4 @@
-# Diamante Roxo v5.1 — Documentação Completa
+# Diamante Roxo v6.0 — Documentação Completa
 
 Sistema de automação para transmissão ao vivo baseado em OBS Studio.
 Gerencia cenas, áudio, alertas e transições de forma autônoma.
@@ -24,9 +24,9 @@ Gerencia cenas, áudio, alertas e transições de forma autônoma.
 
 ## 1. Visão Geral
 
-**Nome:** Diamante Roxo v5.1  
+**Nome:** Diamante Roxo v6.0  
 **Autor:** CyberPhantom (C.P.)  
-**Função:** Automatizar transmissões ao vivo gerenciando OBS Studio, Streamer.bot, Mix It Up, Chatty e Kickerino.
+**Função:** Automatizar transmissões ao vivo gerenciando OBS Studio, Streamer.bot, Mix It Up e Chatty.
 
 O sistema opera em três modos principais:
 - **FILMES:** Reprodução de mídia com sistema de censura por tempo e saltos pós-créditos.
@@ -35,7 +35,7 @@ O sistema opera em três modos principais:
 
 Suporta duas plataformas:
 - **Twitch:** todos os apps são iniciados (Mix It Up, Chatty, Streamer.bot, OBS).
-- **Kick:** Streamer.bot, Kickerino e OBS são iniciados.
+- **Kick:** Streamer.bot e OBS são iniciados.
 
 A configuração é feita inteiramente pelo arquivo `Painel_de_Controle.txt`, permitindo que o sistema rode sozinho sem intervenção manual durante a live.
 
@@ -118,7 +118,6 @@ O arquivo `Painel_de_Controle.txt` define horários para cada ação:
 | `streamerbot` | Inicia Streamer.bot | Ambas |
 | `obs64studio` | Inicia OBS Studio | Ambas |
 | `chatty` | Inicia Chatty | Só Twitch |
-| `kickerino` | Inicia Kickerino (cliente de chat da Kick) | Só Kick |
 | `minimizar_janelas` | Minimiza todos os apps | - |
 | `conectar_obs` | Conecta ao OBS WebSocket | - |
 | `start_sistema` | Inicia transmissão/gravação | - |
@@ -157,7 +156,7 @@ Controlado por `modo_conteudo = filmes` no painel.
   - Monitora cursor da mídia via `get_media_input_status`.
   - Detecta **skip manual** do usuário (avanço > 15s).
   - Executa **saltos pós-créditos** automáticos configurados no `tempo_duracao.txt`.
-  - Verifica **pausa noturna** (23h às 6h) entre filmes.
+  - Verifica **pausa noturna** apenas se `oraculo_ativado = yes` (23h-06h) entre filmes.
   - Verifica **pausa por quantidade** (`pausa_apos_filmes`) — detecta 30s antes do fim e pausa após o enésimo filme.
 - Ao final de todos os filmes, avança para RAIDA.
 
@@ -176,7 +175,7 @@ São dois retornos independentes, configurados separadamente no painel:
 | `oraculo_ativado = yes` | Pausa noturna (23h-06h) | `oraculo_retorno` |
 | `pausa_apos_filmes > 0` | Pausa por quantidade | `pausa_retorno` |
 
-O oráculo gera `pausa_oraculo` (barrou o próximo filme no minuto 1) ou `pausa_horario` (já passou das 23h na reta final). A pausa por quantidade gera `pausa_quantidade`. Cada um tem seu próprio horário de retorno e sua própria função de retomada (`oraculo_retorno` / `pausa_retorno`), eliminando a antiga confusão entre os dois fluxos.
+O oráculo gera `pausa_oraculo` (barrou o próximo filme no minuto 1) ou `pausa_horario` (já passou das 23h na reta final). A pausa por quantidade gera `pausa_quantidade`. Cada um tem seu próprio horário de retorno e sua própria função de retomada (`oraculo_retorno` / `pausa_retorno`), eliminando a antiga confusão entre os dois fluxos. O skip manual **não** dispara PAUSE automaticamente — vai direto ao próximo filme (PAUSE independente).
 
 **Controle de visibilidade das fontes na cena MÍDIAS:**
 
@@ -307,7 +306,7 @@ Os sleeps internos foram ajustados para reduzir carga na CPU durante a transmiss
 | Loop | Antes | Depois | Economia |
 |---|---|---|---|
 | Detecção de filmes (`esperar_com_deteccao`) | 0.2s | 0.5s | ~10.800 chamadas/hora a menos |
-| Pausa noturna (`aba_pausa`) | 2s | 3s | 600 leituras OBS/hora a menos |
+| Pausa noturna (`aba_pausa`) | 2s | 1s | 1.200 leituras OBS/hora a menos |
 | Relógio RERUN (`horario_de_rerun`) | 0.5s | 1s | 3.600 prints/hora a menos |
 
 ---
@@ -339,7 +338,6 @@ mixitup               = HH:MM:SS         # Horário para iniciar
 streamerbot           = HH:MM:SS
 obs64studio           = HH:MM:SS
 chatty                = HH:MM:SS
-kickerino              = HH:MM:SS
 minimizar_janelas     = HH:MM:SS
 conectar_obs          = HH:MM:SS
 start_sistema         = HH:MM:SS          # Ignorado se modo=estudo
@@ -359,12 +357,14 @@ Formato de cada linha: `DURAÇÃO | GATILHO > DESTINO ; GATILHO > DESTINO`
 # ====================================================================
 #  SISTEMA DE TEMPOS
 # ====================================================================
-#  FORMATO   :  DURAÇÃO (HH:MM:SS) | GATILHO > DESTINO ; GATILHO > DESTINO
+#  FORMATO   :  DURAÇÃO (HH:MM:SS:MS) | GATILHO (HH:MM:SS:MS) > DESTINO (HH:MM:SS:MS) ; GATILHO > DESTINO
 #  DURAÇÃO   :  Tempo do filme sem créditos. Obrigatório.
 #  APÓS O |  :  Saltos pós-crédito. Opcional, vários separados por (;).
+#  MS        :  Opcional. Aceita 3 partes (HH:MM:SS) ou 4 partes (HH:MM:SS:MS).
 #
-#  EXEMPLO   :  00:00:00 | 00:00:00 > 00:00:00 ; 00:00:00 > 00:00:00
-#  EXEMPLO   :  00:00:00
+#  EXEMPLO   :  00:00:00:000 | 00:00:00:000 > 00:00:00:000 ; 00:00:00 > 00:00:00
+#  EXEMPLO   :  00:00:00:000
+#  EXEMPLO   :  00:00:00 | 00:10:00:000 > 00:27:40:400
 # ====================================================================
 
 # ==== Bloco de Tempos ====
@@ -373,9 +373,9 @@ Formato de cada linha: `DURAÇÃO | GATILHO > DESTINO ; GATILHO > DESTINO`
 02:15:00 | 02:00:00 > 02:10:00 ; 02:10:00 > 02:12:30
 ```
 
-- **Duração** (`HH:MM:SS`): tempo do filme sem créditos. Obrigatório.
+- **Duração** (`HH:MM:SS:MS`): tempo do filme sem créditos. Obrigatório. MS é opcional (3 ou 4 partes).
 - **Após o `|`**: saltos pós-crédito, opcionais. `GATILHO > DESTINO` é o
-  momento em que o vídeo pula e para onde. Vários separados por `;`.
+  momento em que o vídeo pula e para onde. Vários separados por `;`. Gatilho e destino também aceitam `HH:MM:SS:MS`.
 
 > **A leitura não depende de posição.** O `arquivo_tempo()` percorre o arquivo
 > inteiro e descarta o que começa com `#` ou `=`. Você pode acrescentar,
@@ -426,8 +426,7 @@ Gerado automaticamente na pasta `Script` com timestamps:
 | `start_streamerbot()` | Inicia Streamer.bot (localização dinâmica + subprocess.Popen) |
 | `start_obs64studio()` | Inicia OBS Studio (localização dinâmica + subprocess.Popen) |
 | `start_chatty()` | Inicia Chatty (localização dinâmica + subprocess.Popen) |
-| `start_kickerino()` | Inicia Kickerino (localização dinâmica + subprocess.Popen) |
-| `minimizar_janelas()` | Minimiza todos os 4 apps via pywinauto |
+| `minimizar_janelas()` | Minimiza todos os apps via pywinauto |
 
 ### 9.2. OBS WebSocket
 
@@ -564,7 +563,6 @@ pip install schedule psutil pywinauto obsws_python
 | **Streamer.bot** | `Streamer.bot.exe` | Eventos, comandos e alertas da live |
 | **Mix It Up** | `MixItUp.exe` | Chat, interatividade e comandos (Twitch) |
 | **Chatty** | `Chatty.exe` | Cliente de chat com moderação (Twitch) |
-| **Kickerino** | `Kickerino.exe` | Cliente de chat da Kick (equivalente ao Chatty). Instala em `Documents/Kickerino_<versão>_Windows/` |
 
 ### 11.4. Arquivos do Projeto (devem estar salvos)
 
@@ -721,6 +719,8 @@ Com a remoção do relay:
 | Versão | Data | Mudanças |
 |---|---|---|
 | 5.1 | 01/10/2026 | **Kickerino (cliente de chat da Kick):** novo app gerenciado, exclusivo da plataforma Kick (simétrico ao Chatty, que é exclusivo do Twitch). `start_kickerino()` + agendamento `kickerino` no painel sob o gate `plataforma == kick` + minimização de janela. `localizar_software()` agora aceita wildcard em qualquer trecho do path (necessário porque a pasta do app carrega a versão no nome, ex.: `Kickerino_1.43_Windows`, então um path fixo quebraria a cada atualização). Correção de bug em `fontes_por_cena["PAUSA"]`, que estava como `["SPOTIFY, MÚSICAS"]` (uma string com vírgula) e portanto nunca aplicava ducking — agora é `["SPOTIFY", "MÚSICAS"]`. `aba_midias()` desliga MÚSICAS e `aba_rerun()` liga MÚSICAS. |
+| 5.2 | 02/10/2026 | **Cabeçalho no `tempo_duracao.txt`:** `arquivo_tempo()` agora ignora linhas de comentário (`#`/`=`), igual aos outros leitores; `gerar_tempo.py` com `separar_arquivo_tempos()` e `resetar_censura()` por sessão. |
+| 6.0 | 07/11/2026 | **MS, PAUSE independente e limpeza:** tempos aceitam `HH:MM:SS:MS` (duração, gatilhos, censura), `intervalo_detecao = 0.5`, Kickerino removido por completo (código, painel, Central e docs), PAUSE independente (skip manual não dispara PAUSE; PAUSE só por quantidade/manual), prioridade interna com watchdog de 60s e `retornar_midias` só para PAUSE manual, leitura de retorno via globals, log com arquivo aberto e trava, contagem regressiva zerando em `00:00:00` (detalhada só em MÍDIAS, simples nas demais, ENTRADA incluída), `Rodando/Pausado` pelo `playback_state` real, Central com `retornar_midias` na aba Pausa, loop principal e pausa a 1s, revisão PT-BR de comentários/logs e README v6.0. |
 | 5.0 | 31/08/2026 | **Pausa por quantidade + oráculo isolado + correções de robustez:** pausa após N filmes (`pausa_apos_filmes`/`pausa_retorno`, `aba_pausa("quantidade")` com retomada via seek na posição salva), retornos independentes oráculo/quantidade (`oraculo_retorno`/`pausa_retorno`), `_vol_lock` para thread-safety do cofre de volumes, `_travar_painel_seguranca()` compartilhada entre `stop_sistema`/`_ao_parar` (correção que procurava pela chave e não pelo texto exato), `finally` garante `_stopping_stream = False` mesmo se `stop_stream/stop_record` falhar, `except Exception` em vez de `except:` em todos os blocos, agendamento ignora campos de horário em branco (não mais `00:00:00` à meia-noite), leitura do painel com `with open()` fechando o arquivo, **remoção do relay FFmpeg** (OBS transmite direto para a Kick; Relay, `usar_relay`, `kick_stream_key`/`kick_stream_server`, `testar_conexao_kick()`, `relay.js` e as dependências Node.js/FFmpeg deixam de existir). |
 | 4.13 | 15/07/2026 | Relay v2: SRT primário, HTTP health endpoint (`/health`, `/stats`), retry inteligente com jitter (8 delays + ±250ms), ciclo SRT→RTMPS→SRT, parse detalhado do stderr (bitrate/fps), watchdog de dados, monitor via HTTP no Python. |
 | 4.12 | 15/07/2026 | **Monitor de saúde da stream:** thread daemon `monitorar_saude_stream()` com conexão WebSocket própria polla `GetStreamStatus` a cada 5min e detecta splits mesmo com auto-reconnect do OBS. |

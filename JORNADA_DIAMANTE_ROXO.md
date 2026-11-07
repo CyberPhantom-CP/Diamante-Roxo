@@ -1,4 +1,4 @@
-# Diamante Roxo — Jornada v1.0 → v5.1
+# Diamante Roxo — Jornada v1.0 → v6.0
 
 ## Origem (24/03/2026)
 
@@ -13,7 +13,7 @@ O `exit()` foi removido e o script começou a funcionar. Mas era frágil:
 
 ## A grande fusão
 
-Os dois scripts (Twitch + Kick) foram unificados num só: **Diamante Roxo**. Nasceu o `Painel_de_Controle.txt` — tudo configurável sem mexer no código. Plataforma vira chave: `twitch` abre todos os apps, `kick` só OBS + Streamer.bot (e, desde a v5.1, também o Kickerino).
+Os dois scripts (Twitch + Kick) foram unificados num só: **Diamante Roxo**. Nasceu o `Painel_de_Controle.txt` — tudo configurável sem mexer no código. Plataforma vira chave: `twitch` abre todos os apps, `kick` só OBS + Streamer.bot (Kickerino foi introduzido na v5.1 e removido na v6.0).
 
 ## GrampeadoOBS — o sistema de alertas
 
@@ -28,7 +28,7 @@ Sistema dinâmico: cada filme pode ter regras de censura por timestamp, com múl
 3 camadas de proteção para não passar das 23h:
 1. Oráculo: calcula se o próximo filme estoura o limite — se sim, nem engata
 2. Se passou das 23h, aborta direto
-3. Skip manual também respeita o horário
+3. Skip manual agora é independente: vai direto para o próximo filme, sem disparar PAUSE automaticamente (v6.0 — PAUSE só por quantidade/manual).
 
 ## RERUN
 
@@ -413,3 +413,7 @@ Havia, porém, um detalhe: o reset escrevia **uma única** linha `False | `, ind
 | Cabeçalho no `tempo_duracao.txt` | não | sim |
 | `linhas False \|` no reset da censura | 1 (fixo) | 1 por sessão |
 | Formato de leitura | tempo + `\|` gatilhos | **inalterado** |
+
+## v6.0 — MS, PAUSE independente, Kickerino removido e PT-BR (07/11/2026)
+
+A v6.0 reúne a limpeza de novembro: tempos aceitam `HH:MM:SS:MS` (duração, gatilhos, censura), `intervalo_detecao = 0.5` no lugar do `1.0` original, Kickerino removido por completo do código, Painel e Central, PAUSE independente do Oráculo/hora (skip manual vai direto ao próximo filme; PAUSE só por quantidade ou manual), prioridade interna com watchdog de 60s e `retornar_midias` só para PAUSE manual, log em arquivo aberto uma vez com trava, contagem regressiva zerando em `00:00:00` e só detalhada em MÍDIAS, `Rodando/Pausado` pelo `playback_state` real do OBS, Central com `retornar_midias` movido para a aba Pausa, loop principal e pausa a 1s, e revisão PT-BR de comentários/logs.
