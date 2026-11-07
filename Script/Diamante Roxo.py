@@ -1647,7 +1647,7 @@ def skip_videos(nome_fonte="FILMES"):
     log("Skip realizado!")
 
 def aba_pausa(modo="oraculo"):
-    global midia_decorrido_global, ultima_mod_pausa, global_pausa_modo_atual
+    global midia_decorrido_global, ultima_mod_pausa, global_pausa_modo_atual, global_pausa_retorno, global_oraculo_retorno
     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
     cena = "PAUSA"
     trocar_cena(cena)
@@ -1659,20 +1659,12 @@ def aba_pausa(modo="oraculo"):
 
     chave_retorno = "pausa_retorno" if modo == "quantidade" else "oraculo_retorno"
     global_pausa_modo_atual = modo
-    ultima_mod_pausa = 0
+    ultima_mod_pausa = global_pausa_retorno if modo == "quantidade" else global_oraculo_retorno
     proximo_retorno = None
 
     def _recalcular_retorno():
         nonlocal proximo_retorno
-        retorno_str = "05:00:00"
-        if os.path.exists(painel_geral):
-            with open(painel_geral, "r", encoding="utf-8") as f:
-                for linha in f:
-                    if linha.strip().startswith(chave_retorno):
-                        partes = linha.split("=", 1)
-                        if len(partes) == 2:
-                            retorno_str = partes[1].strip()
-                            break
+        retorno_str = global_pausa_retorno if modo == "quantidade" else global_oraculo_retorno
         horario_retorno = converter_hhmmss_tupla(retorno_str)
         if horario_retorno is None:
             # Antes isso falhava em silencio: a pausa simplesmente nunca voltava.
@@ -1701,11 +1693,11 @@ def aba_pausa(modo="oraculo"):
             print()
             log(f"Erro ao verificar cena durante PAUSA: {e}")
 
-        # == Recalcula se o painel foi editado durante a pausa ==
+        # == Recalcula se o painel foi atualizado (global mudou) ==
         try:
-            mod_atual = os.path.getmtime(painel_geral)
-            if mod_atual != ultima_mod_pausa:
-                ultima_mod_pausa = mod_atual
+            retorno_atual = global_pausa_retorno if modo == "quantidade" else global_oraculo_retorno
+            if retorno_atual != ultima_mod_pausa:
+                ultima_mod_pausa = retorno_atual
                 _recalcular_retorno()
         except Exception:
             pass
