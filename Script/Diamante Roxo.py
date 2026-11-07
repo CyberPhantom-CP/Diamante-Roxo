@@ -481,7 +481,6 @@ class GrampeadoOBS(EventClient):
         fontes_antigas = self._obter_fontes_cena(prev_cena)
         fontes_novas = self._obter_fontes_cena(nova_cena)
 
-        print()
         log(f"Transição de cena detectada: '{prev_cena}' -> '{nova_cena}'")
 
         # Atualiza cena atual apenas após detectar/registrar a transição
