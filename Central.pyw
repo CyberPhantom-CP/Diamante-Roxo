@@ -50,12 +50,12 @@ CAMPOS = [
     ("Pausa", "pausa_apos_filmes", "Pausa apos N filmes (0 = off)", "int"),
     ("Pausa", "pausa_retorno", "Retorno da pausa", "tempo"),
     ("Pausa", "oraculo_retorno", "Retorno do oraculo", "tempo"),
+    ("Pausa", "retornar_midias", "Retorno agendado - Midias (se em PAUSA)", "tempo"),
     ("Pausa", "encerrar_apos_filmes", "Encerrar apos N filmes (0 = off)", "int"),
     ("OBS", "obs_host", "Host", "host"),
     ("OBS", "obs_port", "Porta", "port"),
     ("OBS", "obs_password", "Senha", "senha"),
     ("Agendamentos", "start_sistema", "Iniciar sistema", "tempo"),
-    ("Agendamentos", "retornar_midias", "Retornar midias", "tempo"),
     ("Agendamentos", "iniciar_midias", "Iniciar midias (modo estudo)", "tempo"),
     ("Agendamentos", "mixitup", "MixItUp", "tempo"),
     ("Agendamentos", "streamerbot", "Streamer.bot", "tempo"),
@@ -254,14 +254,14 @@ class CentralApp:
         self._montar_aba_grupos(
             "Pausa",
             [("PAUSA POR QUANTIDADE", ["pausa_apos_filmes", "oraculo_ativado", "encerrar_apos_filmes"]),
-             ("HORARIOS DE RETORNO", ["pausa_retorno", "oraculo_retorno"])],
+             ("HORARIOS DE RETORNO", ["pausa_retorno", "oraculo_retorno", "retornar_midias"])],
         )
         self._montar_aba_formulario("OBS")
         self._montar_aba_grupos(
             "Agendamentos",
             [("APPS", ["mixitup", "streamerbot", "kickerino", "chatty",
                         "obs64studio", "minimizar_janelas"]),
-             ("SISTEMA / OBS", ["start_sistema", "retornar_midias", "iniciar_midias"])],
+             ("SISTEMA / OBS", ["start_sistema", "iniciar_midias"])],
         )
         self._montar_aba_tempos()
 
