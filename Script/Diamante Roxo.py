@@ -81,9 +81,12 @@ _log_lock = threading.Lock()
 _contagem_ativa = False
 
 def log(msg):
+    global _contagem_ativa
     horario = time.strftime("%H:%M:%S")
-    # Durante a contagem regressiva, não polui o terminal — só grava no arquivo.
-    if not _contagem_ativa:
+    if _contagem_ativa:
+        print(f"\r{' ' * 100}\r{horario} - {msg}", flush=True)
+        _contagem_ativa = False
+    else:
         print(f"{horario} - {msg}", flush=True)
 
     if _log_handle is not None:
