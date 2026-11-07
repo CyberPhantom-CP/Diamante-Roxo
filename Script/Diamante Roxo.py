@@ -1044,6 +1044,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
         timeline_vlc_global = -1
     
     proximo_recusado = False  
+    playback_state_atual = None
     resultado_final = "normal"
 
     while True:
@@ -1053,6 +1054,10 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             try:
                 status_obs = client.get_media_input_status(nome_fonte)
                 cursor_atual = status_obs.media_cursor if hasattr(status_obs, 'media_cursor') else None
+                if hasattr(status_obs, 'playback_state'):
+                    playback_state_atual = status_obs.playback_state
+                elif hasattr(status_obs, 'playbackState'):
+                    playback_state_atual = status_obs.playbackState
                 if cursor_atual is not None:
                     decorrido = cursor_atual / 1000.0
 
@@ -1190,7 +1195,9 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             agora_dt = datetime.now()
             fim_dt = agora_dt + timedelta(seconds=restante_exib)
             fim_str = fim_dt.strftime("%H:%M")
-            estado = "Pausado" if (event_client and event_client.resgate_em_andamento) else "Rodando"
+            em_resgate = event_client and event_client.resgate_em_andamento
+            pausado_media = playback_state_atual is not None and "pause" in str(playback_state_atual).lower()
+            estado = "Pausado" if (em_resgate or pausado_media) else "Rodando"
             corte = "Sim" if proximo_recusado else "Não"
             saltos_total = len(lista_saltos) if (is_midia and lista_saltos) else 0
             saltos_feitos = sum(1 for s in lista_saltos if s.get("feito")) if saltos_total else 0
