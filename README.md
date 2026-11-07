@@ -1,6 +1,6 @@
 # Diamante Roxo
 
-![Versão](https://img.shields.io/badge/vers%C3%A3o-v5.1-7b2cbf)
+![Versão](https://img.shields.io/badge/vers%C3%A3o-v6.0-7b2cbf)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-7b2cbf)
 ![Status](https://img.shields.io/badge/status-em%20uso-7b2cbf)
 
@@ -18,12 +18,11 @@ Projeto pessoal de uso contínuo em lives reais. Configuração 100% por arquivo
 | **Streamer.bot** | Automação de eventos, comandos e alertas |
 | **Mix It Up** | Chat, comandos e interatividade |
 | **Chatty** | Cliente de chat com moderação |
-| **Kickerino** | Cliente de chat da Kick |
 
 ## Plataformas
 
 - **Twitch** — todos os aplicativos (Mix It Up, Chatty, Streamer.bot, OBS)
-- **Kick** — Streamer.bot, Kickerino e OBS
+- **Kick** — Streamer.bot e OBS
 
 ## Modos de operação
 
@@ -41,9 +40,9 @@ Projeto pessoal de uso contínuo em lives reais. Configuração 100% por arquivo
 - **Ducking de áudio durante alertas**: reduz o volume das fontes e restaura com fade suave, sem picos
 - **Sistema de censura por trecho** (`controle_censura.txt`): liga/desliga fontes nos horários exatos do filme
 - **Pulos pós-créditos**: avança automaticamente trechos desnecessários
-- **Oráculo de horário**: pausa noturna (23h-06h) com retorno em horário configurado
-- **Pausa por quantidade** de filmes, com retorno automático
-- **Retornos independentes** para pausa noturna e pausa por quantidade
+- **Oráculo de horário**: recusa o próximo filme quando cruzar 23h, com retorno independente (`oraculo_retorno`)
+- **Pausa por quantidade** de filmes, com retorno independente (`pausa_retorno`)
+- **Retornos com prioridade interna**: `retornar_midias` (agendado) só age em PAUSE manual; watchdog de 60s força retorno se `X/Y` falhar
 - **Detecção de queda de stream**: pausa o filme e retoma após 3s de estabilidade
 - **Fontes de texto dinâmicas** no OBS (SESSÃO ID)
 - **Log diário** completo de todas as ações
@@ -101,7 +100,7 @@ Ambos usam caminho hardcoded: preencha a constante `PASTA_*` no topo antes de ex
 - Windows (utiliza `pywinauto`, `psutil` e `schedule`)
 - Python 3.10+ (testado no 3.13)
 - OBS Studio com WebSocket habilitado (porta padrão 4455)
-- Streamer.bot / Mix It Up / Chatty / Kickerino (conforme a plataforma)
+- Streamer.bot / Mix It Up / Chatty (conforme a plataforma)
 - **FFmpeg** (para `ffprobe` no `gerar_tempo.py`)
 - **MPC-BE** com Interface Web ativa na porta 13579 (para `Gerar_Censuras.py`)
 - Conexão de rede estável para transmitir direto na Kick
