@@ -128,7 +128,7 @@ O arquivo `Painel_de_Controle.txt` define horários para cada ação:
 | `pausa_retorno` | Horário de retorno da pausa por quantidade | - |
 | `oraculo_retorno` | Horário de retorno da pausa noturna | - |
 
-O scheduler verifica o arquivo a cada 5 segundos. Se houver alteração, recarrega tudo.
+O scheduler verifica o arquivo a cada 1 segundo. Se houver alteração, recarrega tudo.
 
 > **Nota:** desde a v5.0, os campos de horário em branco no painel **não são agendados** (antes um campo vazio virava `00:00:00` e agendava a ação para a meia-noite). Um horário só é agendado se o campo estiver preenchido.
 
@@ -154,7 +154,7 @@ Controlado por `modo_conteudo = filmes` no painel.
 - Para cada filme:
   - Carrega censuras de `controle_censura.txt` (ativa/desativa fontes CENSURA/TARJA em timestamps específicos).
   - Monitora cursor da mídia via `get_media_input_status`.
-  - Detecta **skip manual** do usuário (avanço > 15s).
+  - Detecta **skip manual** do usuário (reset para o início ou salto >15s, preciso mesmo antes de zerar).
   - Executa **saltos pós-créditos** automáticos configurados no `tempo_duracao.txt`.
   - Verifica **pausa noturna** apenas se `oraculo_ativado = yes` (23h-06h) entre filmes.
   - Verifica **pausa por quantidade** (`pausa_apos_filmes`) — detecta 30s antes do fim e pausa após o enésimo filme.
@@ -297,7 +297,7 @@ Fades de volume usam 8 passos em vez de 15, reduzindo chamadas à API do OBS em 
 
 ### 7.4. Polling do Painel
 
-O arquivo de configuração é verificado a cada 5 segundos (em vez de 1s), reduzindo leituras de disco em 80%.
+O arquivo de configuração é verificado a cada 1 segundo, acompanhando o loop principal (`ultimo_polling = 1`), reduzindo leituras de disco.
 
 ### 7.5. Polling dos Loops de Detecção
 
