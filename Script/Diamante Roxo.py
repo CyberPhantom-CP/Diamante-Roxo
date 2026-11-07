@@ -78,10 +78,16 @@ try:
 except Exception:
     _log_handle = None
 _log_lock = threading.Lock()
+_contagem_ativa = False
 
 def log(msg):
+    global _contagem_ativa
     horario = time.strftime("%H:%M:%S")
-    print(f"{horario} - {msg}", flush=True)
+    if _contagem_ativa:
+        print(f"\r{' ' * 100}\r{horario} - {msg}", flush=True)
+        _contagem_ativa = False
+    else:
+        print(f"{horario} - {msg}", flush=True)
 
     if _log_handle is not None:
         try:
@@ -1033,7 +1039,7 @@ def carregar_censuras_do_filme(indice_filme):
     return lista_censuras
 
 def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
-    global _reconectando_obs
+    global _reconectando_obs, _contagem_ativa
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
@@ -1220,6 +1226,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Pós-créditos: {saltos_str} | Corte: {corte} | {estado} | Fim: {fim_str}   ", end="", flush=True)
             else:
                 print(f"\r{inicio_linha} | Restante: {horas:02d}:{mins:02d}:{secs:02d} | Fim: {fim_str}   ", end="", flush=True)
+            _contagem_ativa = True
         
         try:
             if cena_ativa_obs() != cena_esperada:
@@ -1289,6 +1296,9 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 except Exception:
                     pass
                     
+    if _contagem_ativa:
+        print()
+        _contagem_ativa = False
     return resultado_final
 
 def rotear_pulo():
