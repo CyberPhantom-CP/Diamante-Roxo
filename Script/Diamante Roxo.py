@@ -154,6 +154,8 @@ global_pausa_apos_filmes = 0
 global_pausa_retorno = "05:00:00"
 global_oraculo_retorno = "05:00:00"
 global_encerrar_apos_filmes = 0
+global_pausa_modo_atual = None  # None = sem pausa interna ativa (PAUSE manual); "quantidade"/"oraculo" = pausa interna ativa
+TOLERANCIA_RETORNO_SEGUNDOS = 60  # watchdog: se não voltar X/Y + 60s, força retorno
 
 # === Sistema do Rerun ===
 global_rerun_dias = 1
@@ -1626,7 +1628,7 @@ def skip_videos(nome_fonte="FILMES"):
     log("Skip realizado!")
 
 def aba_pausa(modo="oraculo"):
-    global midia_decorrido_global, ultima_mod_pausa
+    global midia_decorrido_global, ultima_mod_pausa, global_pausa_modo_atual
     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
     cena = "PAUSA"
     trocar_cena(cena)
@@ -1637,6 +1639,7 @@ def aba_pausa(modo="oraculo"):
         log("Pausa Noturna ativada. Aguardando até o horário permitido...")
 
     chave_retorno = "pausa_retorno" if modo == "quantidade" else "oraculo_retorno"
+    global_pausa_modo_atual = modo
     ultima_mod_pausa = 0
     proximo_retorno = None
 
@@ -1672,6 +1675,7 @@ def aba_pausa(modo="oraculo"):
             if cena_atual != cena:
                 print()
                 log(f"Saindo da PAUSA. Nova cena detectada: {cena_atual}")
+                global_pausa_modo_atual = None
                 rotear_pulo()
                 return
         except Exception as e:
@@ -1691,6 +1695,22 @@ def aba_pausa(modo="oraculo"):
         if proximo_retorno and datetime.now() >= proximo_retorno:
             print()
             log("Horário de retorno atingido. Saindo da PAUSA.")
+            global_pausa_modo_atual = None
+            trocar_cena("MÍDIAS")
+            time.sleep(0.5)
+            # Busca o cursor salvo antes de reproduzir, pra evitar que o OBS reinicie do início
+            if midia_decorrido_global > 0:
+                client.set_media_input_cursor("FILMES", int(midia_decorrido_global * 1000))
+                time.sleep(0.3)
+            client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
+            rotear_pulo()
+            return
+
+        # == Watchdog reserva: se não voltar X/Y + 60s, força retorno ==
+        if proximo_retorno and datetime.now() >= proximo_retorno + timedelta(seconds=TOLERANCIA_RETORNO_SEGUNDOS):
+            print()
+            log(f"[WATCHDOG] Retorno {chave_retorno} falhou/nao trocou apos {TOLERANCIA_RETORNO_SEGUNDOS}s. Forcando retorno a MÍDIAS.")
+            global_pausa_modo_atual = None
             trocar_cena("MÍDIAS")
             time.sleep(0.5)
             # Busca o cursor salvo antes de reproduzir, pra evitar que o OBS reinicie do início
@@ -1708,6 +1728,11 @@ def auto_retorno_midias():
     try:
         if global_modo_conteudo == "rerun":
             log("retornar_midias ignorado — modo RERUN ativo")
+            return
+        # Prioridade máxima dos retornos internos: se há pausa por quantidade/oráculo ativa,
+        # o horário agendado (ex.: 05:00) não deve atropelar o retorno X/Y (ex.: 09:00).
+        if global_pausa_modo_atual is not None:
+            log(f"retornar_midias ignorado — pausa interna ativa ({global_pausa_modo_atual}), retorno interno tem prioridade.")
             return
         if cena_ativa_obs() == "PAUSA":
             print()
