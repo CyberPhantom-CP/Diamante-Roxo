@@ -1076,12 +1076,16 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         decorrido = decorrido_total
 
                     if timeline_vlc_global >= 0:
-                        if cursor_atual < (timeline_vlc_global - 15000):
-                            if timeline_vlc_global > 5000:
-                                timeline_vlc_global = cursor_atual
-                                if is_midia: midia_decorrido_global = 0.0
-                                resultado_final = "skip_detectado"
-                                break 
+                        salto_para_tras = timeline_vlc_global - cursor_atual
+                        # Skip manual preciso: reset para o início mesmo em filme recém iniciado,
+                        # ou salto grande para trás (rewind) como antes.
+                        reset_inicio = cursor_atual <= 2000 and salto_para_tras > 300
+                        salto_grande = salto_para_tras > 15000 and timeline_vlc_global > 5000
+                        if reset_inicio or salto_grande:
+                            timeline_vlc_global = cursor_atual
+                            if is_midia: midia_decorrido_global = 0.0
+                            resultado_final = "skip_detectado"
+                            break 
                         
                     timeline_vlc_global = cursor_atual
                 else:
@@ -1537,7 +1541,7 @@ def aba_midias():
             midia_decorrido_global = 0.0
             timeline_vlc_global = -1
             
-            time.sleep(2)
+            time.sleep(0.5)
 
             midia_idx_global += 1
             print()
