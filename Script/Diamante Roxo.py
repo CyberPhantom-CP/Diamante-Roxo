@@ -1171,14 +1171,12 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 resultado_final = "pausa_quantidade"
                 break
 
-        # ENTRADA é curta (9s) — não mostra contagem regressiva, só a mensagem inicial
-        if cena_esperada != "ENTRADA":
-            # Exibição arredonda para cima: digitou 00:05:05, começa mostrando
-            # 00:05:05 (e não 00:05:04). O 'restante' lógico lá em cima continua no
-            # piso, para não mexer nos cortes do Oráculo/pausa, e o horário REAL de fim
-            # não muda (o break segue sendo decorrido >= segundos) — muda só o número
-            # da última tela: 00:00:01 em vez de 00:00:00.
-            restante_exib = math.ceil(segundos - decorrido)
+        # ENTRADA também mostra contagem regressiva
+        if True:
+            # Exibição arredonda ao segundo mais próximo: começa mostrando o total
+            # e chega a 00:00:00 no fim. O 'restante' lógico acima continua no piso,
+            # para não mexer nos cortes do Oráculo/pausa; o fim real segue sendo decorrido >= segundos.
+            restante_exib = max(0, int(round(segundos - decorrido)))
             mins, secs = divmod(restante_exib, 60)
             horas, mins = divmod(mins, 60)
             agora_dt = datetime.now()
