@@ -118,11 +118,13 @@ def notificacao(titulo, mensagem):
                     t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
                     m = str(mensagem).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
                     bt = f"New-BurntToastNotification -Text '{t}','{m}'"
-                    # Usa o ícone do Python no lugar do preto do PowerShell
+                    # Usa o logo do Diamante Roxo (limpo, sem fundo de papel)
                     try:
-                        _py_ico = os.path.join(os.path.dirname(sys.executable), "DLLs", "py.ico")
-                        if os.path.exists(_py_ico):
-                            bt += f" -AppLogo '{_py_ico}'"
+                        _logo = os.path.join(diretorio_base, "logo.png")
+                        if not os.path.exists(_logo):
+                            _logo = os.path.join(os.path.dirname(sys.executable), "DLLs", "py.ico")
+                        if os.path.exists(_logo):
+                            bt += f" -AppLogo '{_logo}'"
                     except Exception:
                         pass
                     r = subprocess.run(
@@ -137,8 +139,10 @@ def notificacao(titulo, mensagem):
                 # 1b) Windows: win10toast (fica na Central no Win10; no Win11 pode sumir, BurntToast cobre)
                 try:
                     mod10 = importlib.import_module("win10toast")
-                    _py_ico10 = os.path.join(os.path.dirname(sys.executable), "DLLs", "py.ico")
-                    mod10.ToastNotifier().show_toast(str(titulo), str(mensagem), duration=4, icon_path=_py_ico10 if os.path.exists(_py_ico10) else None, threaded=True)
+                    _logo10 = os.path.join(diretorio_base, "logo.png")
+                    if not os.path.exists(_logo10):
+                        _logo10 = os.path.join(os.path.dirname(sys.executable), "DLLs", "py.ico")
+                    mod10.ToastNotifier().show_toast(str(titulo), str(mensagem), duration=4, icon_path=_logo10 if os.path.exists(_logo10) else None, threaded=True)
                     return
                 except Exception:
                     pass
