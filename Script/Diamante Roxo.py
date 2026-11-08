@@ -108,45 +108,59 @@ def _fmt_hms(segundos):
         return "00:00:00"
 
 def notificacao(titulo, mensagem):
-    """Mostra um toast do Windows em thread separada. Nunca quebra o script."""
+    """Mostra toast universal (Windows/Linux) em thread separada. Nunca quebra o script."""
     try:
         def _enviar():
-            # 1) plyer (se estiver instalado)
             try:
-                from plyer import notification
-                notification.notify(title=titulo, message=mensagem, app_name="Diamante Roxo", timeout=4)
-                return
-            except Exception:
-                pass
-            # 2) win10toast (se estiver instalado)
-            try:
-                from win10toast import ToastNotifier
-                ToastNotifier().show_toast(titulo, mensagem, duration=4, threaded=True)
-                return
-            except Exception:
-                pass
-            # 3) Fallback PowerShell nativo (sem lib extra)
-            try:
-                t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''")
-                m = str(mensagem).replace("\r", " ").replace("\n", " ").replace("'", "''")
-                # Escapa $ e aspas para o PowerShell não interpretar
-                t = t.replace("$", "`$")
-                m = m.replace("$", "`$")
-                ps = (
-                    "Add-Type -AssemblyName System.Windows.Forms; "
-                    "Add-Type -AssemblyName System.Drawing; "
-                    "$notify = New-Object System.Windows.Forms.NotifyIcon; "
-                    "$notify.Icon = [System.Drawing.SystemIcons]::Information; "
-                    "$notify.Visible = $true; "
-                    f"$notify.ShowBalloonTip(4000, '{t}', '{m}', [System.Windows.Forms.ToolTipIcon]::Info); "
-                    "Start-Sleep -Seconds 5; "
-                    "$notify.Dispose()"
-                )
-                subprocess.Popen(
-                    ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", ps],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                )
-                return
+                if sys.platform.startswith("win"):
+                    t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''")
+                    m = str(mensagem).replace("\r", " ").replace("\n", " ").replace("'", "''")
+                    # Escapa $ e aspas para o PowerShell não interpretar
+                    t = t.replace("$", "`$")
+                    m = m.replace("$", "`$")
+                    ps = (
+                        "Add-Type -AssemblyName System.Windows.Forms; "
+                        "Add-Type -AssemblyName System.Drawing; "
+                        "$notify = New-Object System.Windows.Forms.NotifyIcon; "
+                        "$notify.Icon = [System.Drawing.SystemIcons]::Information; "
+                        "$notify.Visible = $true; "
+                        f"$notify.ShowBalloonTip(4000, '{t}', '{m}', [System.Windows.Forms.ToolTipIcon]::Info); "
+                        "Start-Sleep -Seconds 5; "
+                        "$notify.Dispose()"
+                    )
+                    subprocess.Popen(
+                        ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", ps],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    )
+                    return
+                elif sys.platform.startswith("linux"):
+                    try:
+                        subprocess.Popen(
+                            ["notify-send", "-a", "Diamante Roxo", str(titulo), str(mensagem)],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        )
+                        return
+                    except Exception:
+                        pass
+                    try:
+                        subprocess.Popen(
+                            ["zenity", "--notification", "--text", f"{titulo}\n{mensagem}"],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        )
+                    except Exception:
+                        pass
+                    return
+                else:
+                    # macOS / outros: osascript
+                    try:
+                        t = str(titulo).replace("\\", "\\\\").replace('"', '\\"')
+                        m = str(mensagem).replace("\\", "\\\\").replace('"', '\\"')
+                        subprocess.Popen(
+                            ["osascript", "-e", f'display notification "{m}" with title "{t}"'],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        )
+                    except Exception:
+                        pass
             except Exception:
                 pass
         threading.Thread(target=_enviar, daemon=True).start()
