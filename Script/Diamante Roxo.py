@@ -108,6 +108,9 @@ def _fmt_hms(segundos):
     except Exception:
         return "00:00:00"
 
+_notif_lock = threading.Lock()
+_notif_contador = 0
+
 def notificacao(titulo, mensagem):
     """Mostra toast híbrido v3 (BurntToast/win + win10toast + plyer + stdlib). Nunca quebra o script."""
     try:
@@ -115,9 +118,15 @@ def notificacao(titulo, mensagem):
             # 1) Windows: BurntToast primeiro (fica na Central no Win10/11, igual WhatsApp/navegador)
             if sys.platform.startswith("win"):
                 try:
+                    global _notif_contador
+                    with _notif_lock:
+                        _notif_contador += 1
+                        _uid = f"Diamante Roxo {_notif_contador % 2 + 1}"
                     t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
                     m = str(mensagem).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
                     bt = f"New-BurntToastNotification -Text '{t}','{m}'"
+                    # Limita a 2 na Central e expira em 10 min (sem acumular)
+                    bt += f" -UniqueIdentifier '{_uid}' -ExpirationTime (Get-Date).AddMinutes(10)"
                     # Usa o logo do Diamante Roxo (limpo, sem fundo de papel)
                     try:
                         _logo = os.path.join(diretorio_base, "logo.png")
