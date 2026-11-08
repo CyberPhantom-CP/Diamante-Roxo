@@ -98,6 +98,61 @@ def log(msg):
         except Exception as e:
             print(f"{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}", flush=True)
 
+def _fmt_hms(segundos):
+    try:
+        total = max(0, int(segundos))
+        h, resto = divmod(total, 3600)
+        m, s = divmod(resto, 60)
+        return f"{h:02d}:{m:02d}:{s:02d}"
+    except Exception:
+        return "00:00:00"
+
+def notificacao(titulo, mensagem):
+    """Mostra um toast do Windows em thread separada. Nunca quebra o script."""
+    try:
+        def _enviar():
+            # 1) plyer (se estiver instalado)
+            try:
+                from plyer import notification
+                notification.notify(title=titulo, message=mensagem, app_name="Diamante Roxo", timeout=4)
+                return
+            except Exception:
+                pass
+            # 2) win10toast (se estiver instalado)
+            try:
+                from win10toast import ToastNotifier
+                ToastNotifier().show_toast(titulo, mensagem, duration=4, threaded=True)
+                return
+            except Exception:
+                pass
+            # 3) Fallback PowerShell nativo (sem lib extra)
+            try:
+                t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''")
+                m = str(mensagem).replace("\r", " ").replace("\n", " ").replace("'", "''")
+                # Escapa $ e aspas para o PowerShell não interpretar
+                t = t.replace("$", "`$")
+                m = m.replace("$", "`$")
+                ps = (
+                    "Add-Type -AssemblyName System.Windows.Forms; "
+                    "Add-Type -AssemblyName System.Drawing; "
+                    "$notify = New-Object System.Windows.Forms.NotifyIcon; "
+                    "$notify.Icon = [System.Drawing.SystemIcons]::Information; "
+                    "$notify.Visible = $true; "
+                    f"$notify.ShowBalloonTip(4000, '{t}', '{m}', [System.Windows.Forms.ToolTipIcon]::Info); "
+                    "Start-Sleep -Seconds 5; "
+                    "$notify.Dispose()"
+                )
+                subprocess.Popen(
+                    ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", ps],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+                return
+            except Exception:
+                pass
+        threading.Thread(target=_enviar, daemon=True).start()
+    except Exception:
+        pass
+
 log("Inicializando o Diamante Roxo...")
 
 # === Flags de Global ===
@@ -482,6 +537,7 @@ class GrampeadoOBS(EventClient):
         fontes_novas = self._obter_fontes_cena(nova_cena)
 
         log(f"Transição de cena detectada: '{prev_cena}' -> '{nova_cena}'")
+        notificacao("Diamante Roxo", f"Cena: {prev_cena} -> {nova_cena}")
 
         # Atualiza cena atual apenas após detectar/registrar a transição
         self.cena_atual = nova_cena
@@ -896,10 +952,12 @@ def start_sistema():
         client.start_record()
         print()
         log("Gravação sendo iniciada!")
+        notificacao("Diamante Roxo", "Gravação iniciada!")
     elif global_modo_sistema == "live":
         client.start_stream()
         print()
         log("Transmissão sendo iniciada!")
+        notificacao("Diamante Roxo", "Transmissão iniciada!")
     else:
         print()
         log(f"[ERRO] modo_sistema invalido: {global_modo_sistema!r}. "
@@ -1087,9 +1145,11 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         reset_inicio = cursor_atual <= 2000 and salto_para_tras > 300
                         salto_grande = salto_para_tras > 15000 and timeline_vlc_global > 5000
                         if reset_inicio or salto_grande:
+                            prev_ms = timeline_vlc_global
                             timeline_vlc_global = cursor_atual
                             if is_midia: midia_decorrido_global = 0.0
                             resultado_final = "skip_detectado"
+                            notificacao("Diamante Roxo", f"Skip manual - SESSÃO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}")
                             break 
                         
                     timeline_vlc_global = cursor_atual
@@ -1145,6 +1205,9 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 if deve_ativar != censura["ativo_agora"]:
                     visibilidade_fonte(cena_esperada, censura["fonte"], deve_ativar)
                     censura["ativo_agora"] = deve_ativar
+                    if deve_ativar:
+                        log(f"Censura ativada - SESSÃO {indice_filme + 1:02d} | {censura['fonte']} | {_fmt_hms(decorrido)}")
+                        notificacao("Diamante Roxo", f"Censura ativada - SESSÃO {indice_filme + 1:02d} | {censura['fonte']}")
 
         if is_midia and lista_saltos:
             for salto in lista_saltos:
@@ -1154,6 +1217,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         client.set_media_input_cursor(nome_fonte, ms_destino)
                         print()
                         log(f"Pós-crédito detectado! Saltando para: {salto['destino']}s")
+                        notificacao("Diamante Roxo", f"Pós-créditos - SESSÃO {indice_filme + 1:02d} | -> {_fmt_hms(salto['destino'])}")
                         
                         diferenca_salto = salto["destino"] - salto["gatilho"]
                         inicio -= diferenca_salto 
@@ -1560,6 +1624,7 @@ def aba_midias():
             if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
                 print()
                 log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
+                notificacao("Diamante Roxo", f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
                 visibilidade_fonte(cena, "SESSÃO ID", False)
                 midia_idx_global = 0
                 midia_decorrido_global = 0.0
@@ -1585,6 +1650,7 @@ def aba_midias():
         if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
             print()
             log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
+            notificacao("Diamante Roxo", f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
             visibilidade_fonte(cena, "SESSÃO ID", False)
             # Zera contadores pra não retomar errado no RAID
             midia_idx_global = 0
@@ -1676,8 +1742,10 @@ def aba_pausa(modo="oraculo"):
     print()
     if modo == "quantidade":
         log("Pausa por quantidade ativada. Aguardando horário de retorno...")
+        notificacao("Diamante Roxo", "Pausa por quantidade ativada.")
     else:
         log("Pausa Noturna ativada. Aguardando até o horário permitido...")
+        notificacao("Diamante Roxo", "Pausa Noturna ativada (Oráculo).")
 
     chave_retorno = "pausa_retorno" if modo == "quantidade" else "oraculo_retorno"
     global_pausa_modo_atual = modo
@@ -1974,10 +2042,12 @@ def stop_sistema():
             client.stop_record()
             print()
             log("Gravação encerrada!")
+            notificacao("Diamante Roxo", "Gravação encerrada!")
         elif global_modo_sistema == "live":
             client.stop_stream()
             print()
             log("Transmissão encerrada!")
+            notificacao("Diamante Roxo", "Transmissão encerrada!")
         else:
             print()
             log(f"[ERRO] modo_sistema invalido: {global_modo_sistema!r} ao parar. "
@@ -2145,6 +2215,7 @@ def _ao_parar():
     _travar_painel_seguranca()
 
     log("[SISTEMA] Diamante Roxo encerrado. Todas as conexoes foram limpas.")
+    notificacao("Diamante Roxo", "Sistema encerrado.")
 
 atexit.register(_ao_parar)
 
