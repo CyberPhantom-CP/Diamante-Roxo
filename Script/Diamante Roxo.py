@@ -119,8 +119,8 @@ def notificacao(titulo, mensagem):
                     t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
                     m = str(mensagem).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
                     bt = f"New-BurntToastNotification -Text '{t}','{m}'"
-                    # Limita a 1 na Central e expira em 10 min (sem acumular)
-                    bt += f" -UniqueIdentifier '{_uid}' -ExpirationTime (Get-Date).AddMinutes(10)"
+                    # Limita a 1 na Central e expira em 5 min (sem acumular)
+                    bt += f" -UniqueIdentifier '{_uid}' -ExpirationTime (Get-Date).AddMinutes(5)"
                     # Usa o logo do Diamante Roxo (limpo, sem fundo de papel)
                     try:
                         _logo = os.path.join(diretorio_base, "logo.png")
