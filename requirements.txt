@@ -7,6 +7,7 @@ schedule>=1.2.0
 obsws-python>=1.5.0
 pywinauto>=0.6.8
 plyer>=2.2.0
+win10toast>=0.9.5 ; sys_platform == "win32" # toast moderno (fica na Central); precisa setuptools<81 no Python 3.14+ (pkg_resources)
 
 # Central.pyw (Utilitarios/Central.pyw)
 customtkinter>=5.2.0
