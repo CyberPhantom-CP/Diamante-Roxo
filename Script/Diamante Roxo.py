@@ -134,6 +134,7 @@ def notificacao(titulo, mensagem):
                         ["pwsh", "-NoProfile", "-WindowStyle", "Hidden", "-Command", bt],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                         timeout=10, check=False,
+                        creationflags=subprocess.CREATE_NO_WINDOW,
                     )
                     if r.returncode == 0:
                         return
@@ -177,6 +178,7 @@ def notificacao(titulo, mensagem):
                     subprocess.Popen(
                         ["powershell", "-NoProfile", "-WindowStyle", "Hidden", "-Command", ps],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        creationflags=subprocess.CREATE_NO_WINDOW,
                     )
                     return
                 elif sys.platform.startswith("linux"):
