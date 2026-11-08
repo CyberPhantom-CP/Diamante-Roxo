@@ -33,6 +33,7 @@ print("Carregando módulos...")
 # === Biblioteca Padrão ===
 import atexit
 import glob
+import importlib
 import math
 import os
 import signal
@@ -108,9 +109,17 @@ def _fmt_hms(segundos):
         return "00:00:00"
 
 def notificacao(titulo, mensagem):
-    """Mostra toast universal (Windows/Linux) em thread separada. Nunca quebra o script."""
+    """Mostra toast híbrido (plyer se tiver + fallback stdlib por SO). Nunca quebra o script."""
     try:
         def _enviar():
+            # 1) Híbrido: tenta plyer via import dinâmico (sem alerta no Pylance)
+            try:
+                mod = importlib.import_module("plyer.notification")
+                mod.notify(title=str(titulo), message=str(mensagem), app_name="Diamante Roxo", timeout=4)
+                return
+            except Exception:
+                pass
+            # 2) Fallback stdlib por SO (Windows PowerShell / Linux notify-send / macOS osascript)
             try:
                 if sys.platform.startswith("win"):
                     t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''")
