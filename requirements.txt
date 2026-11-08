@@ -6,6 +6,7 @@ psutil>=5.9.0
 schedule>=1.2.0
 obsws-python>=1.5.0
 pywinauto>=0.6.8
+plyer>=2.2.0
 
 # Central.pyw (Utilitarios/Central.pyw)
 customtkinter>=5.2.0
