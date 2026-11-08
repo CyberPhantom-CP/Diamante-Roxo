@@ -109,11 +109,25 @@ def _fmt_hms(segundos):
         return "00:00:00"
 
 def notificacao(titulo, mensagem):
-    """Mostra toast híbrido (win10toast/win + plyer + stdlib). Nunca quebra o script."""
+    """Mostra toast híbrido v3 (BurntToast/win + win10toast + plyer + stdlib). Nunca quebra o script."""
     try:
         def _enviar():
-            # 1) Windows: win10toast primeiro (fica na Central de Notificações)
+            # 1) Windows: BurntToast primeiro (fica na Central no Win10/11, igual WhatsApp/navegador)
             if sys.platform.startswith("win"):
+                try:
+                    t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
+                    m = str(mensagem).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
+                    bt = f"New-BurntToastNotification -Text '{t}','{m}'"
+                    r = subprocess.run(
+                        ["pwsh", "-NoProfile", "-WindowStyle", "Hidden", "-Command", bt],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                        timeout=10, check=False,
+                    )
+                    if r.returncode == 0:
+                        return
+                except Exception:
+                    pass
+                # 1b) Windows: win10toast (fica na Central no Win10; no Win11 pode sumir, BurntToast cobre)
                 try:
                     mod10 = importlib.import_module("win10toast")
                     mod10.ToastNotifier().show_toast(str(titulo), str(mensagem), duration=4, icon_path=None, threaded=True)
