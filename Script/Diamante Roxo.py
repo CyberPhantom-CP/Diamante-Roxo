@@ -1015,12 +1015,24 @@ def start_sistema():
 
     # Inicia transmissão/gravação no OBS
     if global_modo_sistema in ["gravar", "gravação", "gravacao", "record", "teste"]:
-        client.start_record()
+        try:
+            client.start_record()
+        except Exception as e:
+            if "500" in str(e) or "already" in str(e).lower():
+                log("OBS já está gravando — seguindo (sem erro).")
+            else:
+                raise
         print()
         log("Gravação sendo iniciada!")
         notificacao("Diamante Roxo", "Gravação iniciada!")
     elif global_modo_sistema == "live":
-        client.start_stream()
+        try:
+            client.start_stream()
+        except Exception as e:
+            if "500" in str(e) or "already" in str(e).lower():
+                log("OBS já está transmitindo — seguindo (sem erro).")
+            else:
+                raise
         print()
         log("Transmissão sendo iniciada!")
         notificacao("Diamante Roxo", "Transmissão iniciada!")
