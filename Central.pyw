@@ -284,11 +284,11 @@ class CentralApp:
                                        command=self._alternar_trava)
         self.btn_trava.pack(pady=14)
         
-        # Botão para iniciar o script via .bat
-        self.btn_iniciar = ctk.CTkButton(pagina, text="▶ INICIAR SCRIPT (.bat)", width=280, height=40,
+        # Botão para iniciar o script via PWS7 (.ps1, com fallback .bat)
+        self.btn_iniciar = ctk.CTkButton(pagina, text="▶ INICIAR SCRIPT (.ps1/PWS7)", width=280, height=40,
                                          font=ctk.CTkFont(size=13, weight="bold"),
                                          fg_color="#2f9e44", hover_color="#2b8a3e",
-                                         command=self._iniciar_script_bat)
+                                         command=self._iniciar_script_pws7)
         self.btn_iniciar.pack(pady=(0, 14))
         
         ctk.CTkLabel(
@@ -407,8 +407,22 @@ class CentralApp:
             self.lbl_trava.configure(text="SISTEMA BLOQUEADO", text_color="#eb4d4b")
             self.btn_trava.configure(text="LIGAR SISTEMA", fg_color="#e03131", hover_color="#c92a2a")
 
-    def _iniciar_script_bat(self):
-        """Executa o .bat que dispara a task agendada 'Diamante Roxo'."""
+    def _iniciar_script_pws7(self):
+        """Executa o .ps1 que dispara a task agendada 'Diamante Roxo' via PWS7."""
+        ps1_path = os.path.join(PASTA_PADRAO, "Diamante Roxo (Execução manual).ps1")
+        pwsh_path = r"C:\Program Files\PowerShell\7\pwsh.exe"
+        if os.path.exists(ps1_path) and os.path.exists(pwsh_path):
+            try:
+                subprocess.Popen(
+                    [pwsh_path, "-NoProfile", "-File", ps1_path],
+                    cwd=PASTA_PADRAO,
+                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                )
+                self._status("Script iniciado via .ps1 (PWS7, nova janela).", COR_OK)
+            except Exception as e:
+                self._status(f"Falha ao iniciar .ps1: {e}", COR_ERRO)
+            return
+        # Fallback: .bat (CMD) caso .ps1/pwsh não exista
         bat_path = os.path.join(PASTA_PADRAO, "Diamante Roxo (Execução manual).bat")
         if not os.path.exists(bat_path):
             self._status(f"Arquivo .bat não encontrado: {bat_path}", COR_ERRO)
