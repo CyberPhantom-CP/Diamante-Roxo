@@ -1240,10 +1240,12 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
     if is_midia:
         timeline_vlc_global = -1
     
-    proximo_recusado = False  
+    proximo_recusado = False
     playback_state_atual = None
     ultimo_cursor = None
     contagem_parado = 0
+    parado_recente = False
+    ultimo_parado_ts = 0.0
     resultado_final = "normal"
 
     while True:
@@ -1257,6 +1259,10 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     playback_state_atual = status_obs.playback_state
                 elif hasattr(status_obs, 'playbackState'):
                     playback_state_atual = status_obs.playbackState
+                _estado_up = str(playback_state_atual or "").upper()
+                if "STOPPED" in _estado_up or "ENDED" in _estado_up or "ERROR" in _estado_up or "NONE" in _estado_up:
+                    parado_recente = True
+                    ultimo_parado_ts = time.time()
                 if cursor_atual is not None:
                     decorrido = cursor_atual / 1000.0
                     if ultimo_cursor is not None and cursor_atual == ultimo_cursor:
@@ -1274,22 +1280,33 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
 
                     if timeline_vlc_global >= 0:
                         salto_para_tras = timeline_vlc_global - cursor_atual
-                        # VLC reiniciou para o início (fonte modificada ou rewind grande):
-                        # NÃO avança a SESSÃO — só re-sincroniza o cronômetro (vídeo atrasado, código na frente).
+                        # Filtro: reinício da fonte (estava parado) = re-sincroniza sem avançar.
+                        # Next no VLC (tocando, sem parado) = avança a SESSÃO. Rewind = re-sincroniza.
                         reset_inicio = cursor_atual <= 2000 and salto_para_tras > 300
                         salto_grande = salto_para_tras > 15000 and timeline_vlc_global > 5000
                         if reset_inicio or salto_grande:
                             prev_ms = timeline_vlc_global
                             timeline_vlc_global = cursor_atual
-                            if is_midia:
-                                midia_decorrido_global = 0.0
-                                decorrido_total = 0.0
-                                inicio = time.time()
-                            log(f"[AVISO] VLC reiniciou para o início. Re-sincronizando a SESSÃO {indice_filme + 1:02d} sem avançar.", toast=True)
-                            continue
+                            _veio_de_parado = parado_recente and (time.time() - ultimo_parado_ts < 3.0)
+                            if _veio_de_parado or (salto_grande and not reset_inicio):
+                                if is_midia:
+                                    midia_decorrido_global = 0.0
+                                    decorrido_total = 0.0
+                                    inicio = time.time()
+                                log(f"[AVISO] VLC reiniciou para o início. Re-sincronizando a SESSÃO {indice_filme + 1:02d} sem avançar.", toast=True)
+                                parado_recente = False
+                                continue
+                            # Tocando + voltou pro 0 = skip manual real -> avança
+                            if is_midia: midia_decorrido_global = 0.0
+                            resultado_final = "skip_detectado"
+                            log(f"Skip manual - SESSÃO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}", toast=True)
+                            parado_recente = False
+                            break
 
                     timeline_vlc_global = cursor_atual
                 else:
+                    parado_recente = True
+                    ultimo_parado_ts = time.time()
                     decorrido = decorrido_total + (agora - inicio)
             except Exception:
                 # Conexão com o OBS caiu durante o filme: pausar, salvar posição e tentar reconectar
