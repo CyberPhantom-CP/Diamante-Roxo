@@ -11,3 +11,7 @@ desktop.ini
 # Compilados Python (cache gerado ao executar)
 __pycache__/
 *.pyc
+
+# Manutencao pessoal local (fora do repo)
+ManutencaoMensal.ps1
+Manutencao/
