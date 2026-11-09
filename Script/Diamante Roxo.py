@@ -651,7 +651,7 @@ class GrampeadoOBS(EventClient):
         log(f"Transição de cena detectada: '{prev_cena}' -> '{nova_cena}'", toast=True)
         _pendente = _consumir_cena_pendente(nova_cena)
         if _pendente is not None:
-            log(f"Cena trocada para: {_pendente}", toast=True)
+            log(f"Cena trocada para: {_pendente}")
 
         # Atualiza cena atual apenas após detectar/registrar a transição
         self.cena_atual = nova_cena
@@ -768,7 +768,7 @@ class GrampeadoOBS(EventClient):
                     sucesso = ajustar_volume_seguro(nome_fonte, 0.031622)
 
                     if sucesso:
-                        log(f"Cena {self.cena_atual}: Resgate detectado. Volume de '{nome_fonte}' reduzido para -30 dB.", toast=True)
+                        log(f"Cena {self.cena_atual}: Resgate detectado. Volume de '{nome_fonte}' reduzido para -30 dB.")
                     else:
                         log(f"Cena {self.cena_atual}: falha ao reduzir o volume de '{nome_fonte}'.")
 
@@ -778,14 +778,14 @@ class GrampeadoOBS(EventClient):
     def finalizar_resgate_com_seguranca(self):
         global client, global_modo_conteudo
         print()
-        log("[SISTEMA] Timer de 3 segundos esgotado. Finalizando resgate com segurança!", toast=True)
-        
+        log("[SISTEMA] Timer de 3 segundos esgotado. Finalizando o resgate com segurança.")
+
         self.resgate_em_andamento = False
         self.timer_retorno = None
 
         # 1⃣ COFRE DE VOLUMES (Proteção máxima contra TypeError)
         try:
-            # Captura e limpa o cofre como uma operação só, protegida por lock —
+            # Captura e limpa o cofre como uma operação só, protegido por lock —
             # finalizar_resgate_com_seguranca roda tanto pela thread de eventos do
             # OBS quanto disparada por threading.Timer, então sem lock dava pra
             # perder ou duplicar uma entrada se as duas caíssem ao mesmo tempo.
@@ -795,7 +795,7 @@ class GrampeadoOBS(EventClient):
 
             if itens_para_restaurar:
                 for fonte, vol_original in itens_para_restaurar:
-                    log(f"Alerta concluído. Iniciando a restauração gradativa de '{fonte}' para o volume original...", toast=True)
+                    log(f"Alerta concluído. Iniciando a restauração gradativa de '{fonte}' para o volume original...")
                     threading.Thread(target=self.executar_efeito_fade, args=(fonte, 0.031622, vol_original, 2), daemon=True).start()
             else:
                 log("Nenhum volume de áudio pendente para restaurar.")
@@ -1046,9 +1046,9 @@ def esperar(tempo_str, cena_esperada, nome_fonte="FILMES", is_midia=False, durac
     time.sleep(0.5)
     _pendente = _consumir_cena_pendente()
     if _pendente is not None:
-        log(f"Cena trocada para: {_pendente}", toast=True)
+        log(f"Cena trocada para: {_pendente}")
     print()
-    log(f"Aguardando {tempo_str}...", toast=True)
+    log(f"Aguardando {tempo_str}...")
     return esperar_com_deteccao(total_segundos, cena_esperada, nome_fonte, is_midia, duracao_proximo_seg, lista_saltos, lista_censuras, indice_filme, _inicio_contagem)
 
 def start_sistema():
@@ -1117,7 +1117,7 @@ def trocar_cena(nome):
     def _flush_cena():
         valor = _consumir_cena_pendente(nome)
         if valor is not None:
-            log(f"Cena trocada para: {valor}", toast=True)
+            log(f"Cena trocada para: {valor}")
     threading.Timer(1.5, _flush_cena).start()
 
 def cena_ativa_obs():
@@ -1274,18 +1274,20 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
 
                     if timeline_vlc_global >= 0:
                         salto_para_tras = timeline_vlc_global - cursor_atual
-                        # Skip manual preciso: reset para o início mesmo em filme recém iniciado,
-                        # ou salto grande para trás (rewind) como antes.
+                        # VLC reiniciou para o início (fonte modificada ou rewind grande):
+                        # NÃO avança a SESSÃO — só re-sincroniza o cronômetro (vídeo atrasado, código na frente).
                         reset_inicio = cursor_atual <= 2000 and salto_para_tras > 300
                         salto_grande = salto_para_tras > 15000 and timeline_vlc_global > 5000
                         if reset_inicio or salto_grande:
                             prev_ms = timeline_vlc_global
                             timeline_vlc_global = cursor_atual
-                            if is_midia: midia_decorrido_global = 0.0
-                            resultado_final = "skip_detectado"
-                            log(f"Skip manual - SESSÃO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}", toast=True)
-                            break 
-                        
+                            if is_midia:
+                                midia_decorrido_global = 0.0
+                                decorrido_total = 0.0
+                                inicio = time.time()
+                            log(f"[AVISO] VLC reiniciou para o início. Re-sincronizando a SESSÃO {indice_filme + 1:02d} sem avançar.", toast=True)
+                            continue
+
                     timeline_vlc_global = cursor_atual
                 else:
                     decorrido = decorrido_total + (agora - inicio)
@@ -1295,7 +1297,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                 log("[ERRO] Conexão com o OBS perdida durante a reprodução. Pausando o filme e tentando reconectar...", toast=True)
                 try:
                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
-                    log("[RECONEXÃO] Filme pausado devido à perda de conexão com o OBS.", toast=True)
+                    log("[RECONEXÃO] Filme pausado devido à perda de conexão com o OBS.")
                 except Exception:
                     pass  # Se não conseguiu pausar, segue tentando reconectar
 
@@ -1311,18 +1313,18 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                                     client.set_media_input_cursor("FILMES", int(midia_decorrido_global * 1000))
                                     time.sleep(0.3)
                                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
-                                    log(f"[RECONEXÃO] Filme retomado do segundo {int(midia_decorrido_global)}.", toast=True)
+                                    log(f"[RECONEXÃO] Filme retomado do segundo {int(midia_decorrido_global)}.")
                                 else:
                                     # Não tinha tempo decorrido salvo, apenas tenta retomar do início
                                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
-                                    log("[RECONEXÃO] Filme retomado do início.", toast=True)
+                                    log("[RECONEXÃO] Filme retomado do início.")
                             except Exception as e:
-                                log(f"[ERRO] Falha ao retomar o filme após a reconexão: {e}.", toast=True)
+                                log(f"[ERRO] Falha ao retomar o filme após a reconexão: {e}.")
                             break  # Sai do loop de reconexão
                         else:
-                            log("[RECONEXÃO] Tentativa de reconexão falhou. Tentando novamente em 5 segundos...", toast=True)
+                            log("[RECONEXÃO] Tentativa de reconexão falhou. Tentando novamente em 5 segundos...")
                     except Exception as e:
-                        log(f"[ERRO] Erro durante a tentativa de reconexão: {e}.", toast=True)
+                        log(f"[ERRO] Erro durante a tentativa de reconexão: {e}.")
                     finally:
                         _reconectando_obs = False
 
@@ -1812,12 +1814,12 @@ def aba_midias():
 
     if event_client and event_client.resgate_em_andamento:
         print()
-        log("Resgate da cena MÍDIAS em andamento. Segurando a cena atual.", toast=True)
+        log("Resgate da cena MÍDIAS em andamento. Segurando a cena atual.")
 
         while event_client.resgate_em_andamento:
             time.sleep(0.5)
         print()
-        log("Todos os resgates foram concluídos.", toast=True)
+        log("Todos os resgates foram concluídos.")
 
     # Zera para a próxima live quando tudo acabar
     midia_idx_global = 0
