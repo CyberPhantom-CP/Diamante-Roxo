@@ -80,11 +80,24 @@ except Exception:
     _log_handle = None
 _log_lock = threading.Lock()
 _notif_lock = threading.Lock()
+_cena_lock = threading.Lock()
 _toast_slots = [None, None]
 _toast_ptr = 0
 _toast_limpeza_feita = False
 _contagem_ativa = False
 _cena_pendente_log = None
+
+def _consumir_cena_pendente(esperada=None):
+    """Consome atômicamente o 'Cena trocada' pendente (evita log duplo entre threads)."""
+    global _cena_pendente_log
+    with _cena_lock:
+        if _cena_pendente_log is None:
+            return None
+        if esperada is not None and _cena_pendente_log != esperada:
+            return None
+        valor = _cena_pendente_log
+        _cena_pendente_log = None
+        return valor
 
 def log(msg, toast=False):
     global _contagem_ativa
@@ -629,18 +642,22 @@ class GrampeadoOBS(EventClient):
         return resultado
 
     def on_current_program_scene_changed(self, data):
-        global global_modo_conteudo, client, _cena_pendente_log
+        global global_modo_conteudo, client
         nova_cena = data.scene_name
         prev_cena = self.cena_atual
+
+        # Ignora evento duplicado do OBS (mesma cena)
+        if prev_cena == nova_cena:
+            return
 
         # Descobre fontes de ambas as cenas (cacheia automaticamente)
         fontes_antigas = self._obter_fontes_cena(prev_cena)
         fontes_novas = self._obter_fontes_cena(nova_cena)
 
         log(f"Transição de cena detectada: '{prev_cena}' -> '{nova_cena}'", toast=True)
-        if _cena_pendente_log == nova_cena:
-            log(f"Cena trocada para: {nova_cena}", toast=True)
-            _cena_pendente_log = None
+        _pendente = _consumir_cena_pendente(nova_cena)
+        if _pendente is not None:
+            log(f"Cena trocada para: {_pendente}", toast=True)
 
         # Atualiza cena atual apenas após detectar/registrar a transição
         self.cena_atual = nova_cena
@@ -1036,11 +1053,9 @@ def esperar(tempo_str, cena_esperada, nome_fonte="FILMES", is_midia=False, durac
     # dando tempo da thread do OBS logar "Transição de cena" antes do "Aguardando".
     _inicio_contagem = time.time()
     time.sleep(0.5)
-    global _cena_pendente_log
-    _pendente = _cena_pendente_log
+    _pendente = _consumir_cena_pendente()
     if _pendente is not None:
         log(f"Cena trocada para: {_pendente}", toast=True)
-        _cena_pendente_log = None
     print()
     log(f"Aguardando {tempo_str}...", toast=True)
     return esperar_com_deteccao(total_segundos, cena_esperada, nome_fonte, is_midia, duracao_proximo_seg, lista_saltos, lista_censuras, indice_filme, _inicio_contagem)
@@ -1107,12 +1122,12 @@ def trocar_cena(nome):
     global _cena_pendente_log
     client.set_current_program_scene(nome)
     # Loga "Cena trocada" só depois da "Transição" (handler do OBS), com fallback
-    _cena_pendente_log = nome
+    with _cena_lock:
+        _cena_pendente_log = nome
     def _flush_cena():
-        global _cena_pendente_log
-        if _cena_pendente_log == nome:
-            log(f"Cena trocada para: {nome}")
-            _cena_pendente_log = None
+        valor = _consumir_cena_pendente(nome)
+        if valor is not None:
+            log(f"Cena trocada para: {valor}", toast=True)
     threading.Timer(1.5, _flush_cena).start()
 
 def cena_ativa_obs():
