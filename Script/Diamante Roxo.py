@@ -79,10 +79,11 @@ try:
 except Exception:
     _log_handle = None
 _log_lock = threading.Lock()
+_notif_lock = threading.Lock()
 _contagem_ativa = False
 _cena_pendente_log = None
 
-def log(msg):
+def log(msg, toast=False):
     global _contagem_ativa
     horario = time.strftime("%H:%M:%S")
     if _contagem_ativa:
@@ -100,8 +101,9 @@ def log(msg):
         except Exception as e:
             print(f"{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}", flush=True)
 
-    # Espelha a linha do terminal/txt no toast (todo log, exceto contagem que não passa aqui).
-    # A contagem usa print direto (\r), então não entra aqui automaticamente.
+    # Só notifica quando toast=True (pontos importantes). A contagem usa print direto, nunca entra aqui.
+    if not toast:
+        return
     try:
         _notifica = globals().get("notificacao")
         if _notifica is not None:
@@ -119,7 +121,7 @@ def _fmt_hms(segundos):
         return "00:00:00"
 
 def notificacao(titulo, mensagem):
-    """Mostra toast híbrido v3 (BurntToast/win + win10toast + plyer + stdlib). Nunca quebra o script."""
+    """Mostra toast v4 (BurntToast -> plyer -> stdlib). Sem win10toast (quebra no Py3.14). Nunca quebra o script."""
     try:
         def _enviar():
             # 1) Windows: BurntToast primeiro (fica na Central no Win10/11, igual WhatsApp/navegador)
@@ -140,24 +142,15 @@ def notificacao(titulo, mensagem):
                             bt += f" -AppLogo '{_logo}'"
                     except Exception:
                         pass
-                    r = subprocess.run(
-                        ["pwsh", "-NoProfile", "-WindowStyle", "Hidden", "-Command", bt],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                        timeout=10, check=False,
-                        creationflags=subprocess.CREATE_NO_WINDOW,
-                    )
+                    with _notif_lock:
+                        r = subprocess.run(
+                            ["pwsh", "-NoProfile", "-WindowStyle", "Hidden", "-Command", bt],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            timeout=10, check=False,
+                            creationflags=subprocess.CREATE_NO_WINDOW,
+                        )
                     if r.returncode == 0:
                         return
-                except Exception:
-                    pass
-                # 1b) Windows: win10toast (fica na Central no Win10; no Win11 pode sumir, BurntToast cobre)
-                try:
-                    mod10 = importlib.import_module("win10toast")
-                    _logo10 = os.path.join(diretorio_base, "logo.png")
-                    if not os.path.exists(_logo10):
-                        _logo10 = os.path.join(os.path.dirname(sys.executable), "DLLs", "py.ico")
-                    mod10.ToastNotifier().show_toast(str(titulo), str(mensagem), duration=4, icon_path=_logo10 if os.path.exists(_logo10) else None, threaded=True)
-                    return
                 except Exception:
                     pass
             # 2) Híbrido: tenta plyer via import dinâmico (sem alerta no Pylance)
@@ -268,7 +261,7 @@ try:
         exit()
 except Exception as e:
     print()
-    log(f"[ERRO CRÍTICO] Falha ao verificar a trava de segurança: {e}")
+    log(f"[ERRO CRÍTICO] Falha ao verificar a trava de segurança: {e}", toast=True)
     log("Encerrando o sistema imediatamente por precaução.")
     time.sleep(2)
     exit()
@@ -608,9 +601,9 @@ class GrampeadoOBS(EventClient):
         fontes_antigas = self._obter_fontes_cena(prev_cena)
         fontes_novas = self._obter_fontes_cena(nova_cena)
 
-        log(f"Transição de cena detectada: '{prev_cena}' -> '{nova_cena}'")
+        log(f"Transição de cena detectada: '{prev_cena}' -> '{nova_cena}'", toast=True)
         if _cena_pendente_log == nova_cena:
-            log(f"Cena trocada para: {nova_cena}")
+            log(f"Cena trocada para: {nova_cena}", toast=True)
             _cena_pendente_log = None
 
         # Atualiza cena atual apenas após detectar/registrar a transição
@@ -701,7 +694,7 @@ class GrampeadoOBS(EventClient):
                 client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
                 self._midia_pausada_pelo_alerta = True
                 print()
-                log("Cena MÍDIAS (Filmes): Resgate detectado! Mídia pausada...")
+                log("Cena MÍDIAS (Filmes): Resgate detectado! Mídia pausada...", toast=True)
             except Exception as e:
                 print()
                 log(f"Erro ao pausar mídia no OBS: {e}")
@@ -729,7 +722,7 @@ class GrampeadoOBS(EventClient):
                     
                     if sucesso:
                         print()
-                        log(f"Cena {self.cena_atual}: Resgate detectado! Volume de '{nome_fonte}' reduzido para -30dB...")
+                        log(f"Cena {self.cena_atual}: Resgate detectado! Volume de '{nome_fonte}' reduzido para -30dB...", toast=True)
                     else:
                         print()
                         log(f"Cena {self.cena_atual}: Falha ao reduzir volume de '{nome_fonte}'")
@@ -741,7 +734,7 @@ class GrampeadoOBS(EventClient):
     def finalizar_resgate_com_seguranca(self):
         global client, global_modo_conteudo
         print()
-        log("[SISTEMA] Timer de 3 segundos esgotado. Finalizando resgate com segurança!")
+        log("[SISTEMA] Timer de 3 segundos esgotado. Finalizando resgate com segurança!", toast=True)
         
         self.resgate_em_andamento = False
         self.timer_retorno = None
@@ -758,7 +751,7 @@ class GrampeadoOBS(EventClient):
 
             if itens_para_restaurar:
                 for fonte, vol_original in itens_para_restaurar:
-                    log(f"Alerta concluído! Iniciando Fade-In para '{fonte}' voltando ao volume original...")
+                    log(f"Alerta concluído! Iniciando Fade-In para '{fonte}' voltando ao volume original...", toast=True)
                     threading.Thread(target=self.executar_efeito_fade, args=(fonte, 0.031622, vol_original, 2), daemon=True).start()
             else:
                 log("Nenhum volume de áudio pendente no cofre para restaurar.")
@@ -1001,7 +994,7 @@ def esperar(tempo_str, cena_esperada, nome_fonte="FILMES", is_midia=False, durac
     total_segundos = converter_hhmmss(tempo_str)
     if total_segundos is None:
         print()
-        log(f"[ERRO] Tempo invalido no tempo_duracao.txt: {tempo_str!r}. Esperado HH:MM:SS ou HH:MM:SS:MS. Pulando este filme.")
+        log(f"[ERRO] Tempo invalido no tempo_duracao.txt: {tempo_str!r}. Esperado HH:MM:SS ou HH:MM:SS:MS. Pulando este filme.", toast=True)
         return None
     # Conta o tempo desde a troca de cena (o timer ja correu durante a transição),
     # dando tempo da thread do OBS logar "Transição de cena" antes do "Aguardando".
@@ -1010,10 +1003,10 @@ def esperar(tempo_str, cena_esperada, nome_fonte="FILMES", is_midia=False, durac
     global _cena_pendente_log
     _pendente = _cena_pendente_log
     if _pendente is not None:
-        log(f"Cena trocada para: {_pendente}")
+        log(f"Cena trocada para: {_pendente}", toast=True)
         _cena_pendente_log = None
     print()
-    log(f"Aguardando {tempo_str}...")
+    log(f"Aguardando {tempo_str}...", toast=True)
     return esperar_com_deteccao(total_segundos, cena_esperada, nome_fonte, is_midia, duracao_proximo_seg, lista_saltos, lista_censuras, indice_filme, _inicio_contagem)
 
 def start_sistema():
@@ -1040,7 +1033,7 @@ def start_sistema():
             else:
                 raise
         print()
-        log("Gravação sendo iniciada!")
+        log("Gravação sendo iniciada!", toast=True)
     elif global_modo_sistema == "live":
         try:
             client.start_stream()
@@ -1050,7 +1043,7 @@ def start_sistema():
             else:
                 raise
         print()
-        log("Transmissão sendo iniciada!")
+        log("Transmissão sendo iniciada!", toast=True)
     else:
         print()
         log(f"[ERRO] modo_sistema invalido: {global_modo_sistema!r}. "
@@ -1249,7 +1242,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                             timeline_vlc_global = cursor_atual
                             if is_midia: midia_decorrido_global = 0.0
                             resultado_final = "skip_detectado"
-                            log(f"Skip manual - SESSÃO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}")
+                            log(f"Skip manual - SESSÃO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}", toast=True)
                             break 
                         
                     timeline_vlc_global = cursor_atual
@@ -1258,10 +1251,10 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
             except Exception:
                 # Conexão com o OBS caiu durante o filme: pausar, salvar posição e tentar reconectar
                 print()
-                log("[ERRO] Conexão com o OBS perdida durante a reprodução. Pausando o filme e tentando reconectar...")
+                log("[ERRO] Conexão com o OBS perdida durante a reprodução. Pausando o filme e tentando reconectar...", toast=True)
                 try:
                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
-                    log("[RECONEXAO] Filme pausado devido à perda de conexão com o OBS.")
+                    log("[RECONEXAO] Filme pausado devido à perda de conexão com o OBS.", toast=True)
                 except Exception:
                     pass  # Se não conseguiu pausar, segue tentando reconectar
                 
@@ -1270,25 +1263,25 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     _reconectando_obs = True
                     try:
                         if conectar_obs():
-                            log("[RECONEXAO] Reconectado ao OBS com sucesso.")
+                            log("[RECONEXAO] Reconectado ao OBS com sucesso.", toast=True)
                             # Restaurar posicao do filme e dar play
                             try:
                                 if midia_decorrido_global > 0:
                                     client.set_media_input_cursor("FILMES", int(midia_decorrido_global * 1000))
                                     time.sleep(0.3)
                                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
-                                    log(f"[RECONEXAO] Filme retomado do segundo {int(midia_decorrido_global)}.")
+                                    log(f"[RECONEXAO] Filme retomado do segundo {int(midia_decorrido_global)}.", toast=True)
                                 else:
                                     # Nao tinha decorrido salvo, apenas tenta retomar do zero
                                     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PLAY")
-                                    log("[RECONEXAO] Filme retomado do inicio.")
+                                    log("[RECONEXAO] Filme retomado do inicio.", toast=True)
                             except Exception as e:
-                                log(f"[ERRO] Falha ao retomar filme apos reconexao: {e}")
+                                log(f"[ERRO] Falha ao retomar filme apos reconexao: {e}", toast=True)
                             break  # Sai do loop de reconexao
                         else:
-                            log("[RECONEXAO] Tentativa de reconexao falhou, tentando novamente em 5 segundos...")
+                            log("[RECONEXAO] Tentativa de reconexao falhou, tentando novamente em 5 segundos...", toast=True)
                     except Exception as e:
-                        log(f"[ERRO] Erro durante tentativa de reconexao: {e}")
+                        log(f"[ERRO] Erro durante tentativa de reconexao: {e}", toast=True)
                     finally:
                         _reconectando_obs = False
                     
@@ -1306,7 +1299,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     visibilidade_fonte(cena_esperada, censura["fonte"], deve_ativar)
                     censura["ativo_agora"] = deve_ativar
                     if deve_ativar:
-                        log(f"Censura ativada - SESSÃO {indice_filme + 1:02d} | {censura['fonte']} | {_fmt_hms(decorrido)}")
+                        log(f"Censura ativada - SESSÃO {indice_filme + 1:02d} | {censura['fonte']} | {_fmt_hms(decorrido)}", toast=True)
 
         if is_midia and lista_saltos:
             for salto in lista_saltos:
@@ -1315,7 +1308,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         ms_destino = int(salto["destino"] * 1000)
                         client.set_media_input_cursor(nome_fonte, ms_destino)
                         print()
-                        log(f"Pós-crédito detectado! SESSÃO {indice_filme + 1:02d} | Saltando para: {_fmt_hms(salto['destino'])}")
+                        log(f"Pós-crédito detectado! SESSÃO {indice_filme + 1:02d} | Saltando para: {_fmt_hms(salto['destino'])}", toast=True)
                         
                         diferenca_salto = salto["destino"] - salto["gatilho"]
                         inicio -= diferenca_salto 
@@ -1537,7 +1530,8 @@ def visibilidade_fonte(cena, nome_fonte, visivel):
                 client.set_scene_item_enabled(cena, item['sceneItemId'], visivel)
                 _vis_estado.setdefault(cena, {})[nome_fonte] = visivel
                 print()
-                log(f"Fonte '{nome_fonte}' -> {'LIGADA' if visivel else 'DESLIGADA'}")
+                _so_tarja_cens = ("TARJA" in nome_fonte.upper() or "CENSURA" in nome_fonte.upper())
+                log(f"Fonte '{nome_fonte}' -> {'LIGADA' if visivel else 'DESLIGADA'}", toast=_so_tarja_cens)
                 return
             if item.get('isGroup', False) or item.get('is_group', False):
                 g_nome = item['sourceName']
@@ -1547,7 +1541,8 @@ def visibilidade_fonte(cena, nome_fonte, visivel):
                         client.set_scene_item_enabled(g_nome, sub['sceneItemId'], visivel)
                         _vis_estado.setdefault(cena, {})[nome_fonte] = visivel
                         print()
-                        log(f"Fonte '{nome_fonte}' (dentro de '{g_nome}') -> {'LIGADA' if visivel else 'DESLIGADA'}")
+                        _so_tarja_cens = ("TARJA" in nome_fonte.upper() or "CENSURA" in nome_fonte.upper())
+                        log(f"Fonte '{nome_fonte}' (dentro de '{g_nome}') -> {'LIGADA' if visivel else 'DESLIGADA'}", toast=_so_tarja_cens)
                         return
     except Exception as e:
         print()
@@ -1706,7 +1701,7 @@ def aba_midias():
         # === Skip manual detectado. Avança o índice e segue para o próximo filme (PAUSE é independente: só por quantidade/manual). ===
         if resultado == "skip_detectado":
             print()
-            log("Skip manual detectado durante a reprodução. Pulando para próxima mídia...")
+            log("Skip manual detectado durante a reprodução. Pulando para próxima mídia...", toast=True)
 
             # Reseta as memórias de tempo para o próximo filme começar do zero absoluto
             midia_decorrido_global = 0.0
@@ -1721,7 +1716,7 @@ def aba_midias():
             # --- Encerramento por quantidade de filmes (também no skip) ---
             if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
                 print()
-                log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
+                log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...", toast=True)
                 visibilidade_fonte(cena, "SESSÃO ID", False)
                 midia_idx_global = 0
                 midia_decorrido_global = 0.0
@@ -1746,7 +1741,7 @@ def aba_midias():
         # --- Encerramento por quantidade de filmes (fim natural) ---
         if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
             print()
-            log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
+            log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...", toast=True)
             visibilidade_fonte(cena, "SESSÃO ID", False)
             # Zera contadores pra não retomar errado no RAID
             midia_idx_global = 0
@@ -1776,12 +1771,12 @@ def aba_midias():
 
     if event_client and event_client.resgate_em_andamento:
         print()
-        log("Resgate de cena MÍDIAS em andamento. Segurando cena atual...")
+        log("Resgate de cena MÍDIAS em andamento. Segurando cena atual...", toast=True)
 
         while event_client.resgate_em_andamento:
             time.sleep(0.5)
         print()
-        log("Todos os resgates foram concluídos.")
+        log("Todos os resgates foram concluídos.", toast=True)
 
     # Zera para a próxima live quando tudo acabar
     midia_idx_global = 0 
@@ -1837,9 +1832,9 @@ def aba_pausa(modo="oraculo"):
     trocar_cena(cena)
     print()
     if modo == "quantidade":
-        log("Pausa por quantidade ativada. Aguardando horário de retorno...")
+        log("Pausa por quantidade ativada. Aguardando horário de retorno...", toast=True)
     else:
-        log("Pausa Noturna ativada. Aguardando até o horário permitido...")
+        log("Pausa Noturna ativada. Aguardando até o horário permitido...", toast=True)
 
     chave_retorno = "pausa_retorno" if modo == "quantidade" else "oraculo_retorno"
     global_pausa_modo_atual = modo
@@ -2135,11 +2130,11 @@ def stop_sistema():
         if global_modo_sistema in ["gravar", "gravação", "gravacao", "record", "teste"]:
             client.stop_record()
             print()
-            log("Gravação encerrada!")
+            log("Gravação encerrada!", toast=True)
         elif global_modo_sistema == "live":
             client.stop_stream()
             print()
-            log("Transmissão encerrada!")
+            log("Transmissão encerrada!", toast=True)
         else:
             print()
             log(f"[ERRO] modo_sistema invalido: {global_modo_sistema!r} ao parar. "
@@ -2306,7 +2301,7 @@ def _ao_parar():
 
     _travar_painel_seguranca()
 
-    log("[SISTEMA] Diamante Roxo encerrado. Todas as conexoes foram limpas.")
+    log("[SISTEMA] Diamante Roxo encerrado. Todas as conexoes foram limpas.", toast=True)
 
 atexit.register(_ao_parar)
 
