@@ -80,6 +80,9 @@ except Exception:
     _log_handle = None
 _log_lock = threading.Lock()
 _notif_lock = threading.Lock()
+_toast_slots = [None, None]
+_toast_ptr = 0
+_toast_limpeza_feita = False
 _contagem_ativa = False
 _cena_pendente_log = None
 
@@ -121,28 +124,61 @@ def _fmt_hms(segundos):
         return "00:00:00"
 
 def notificacao(titulo, mensagem):
-    """Mostra toast v4 (BurntToast -> plyer -> stdlib). Sem win10toast (quebra no Py3.14). Nunca quebra o script."""
+    """Mostra toast v5 com 2 slots (sem duplicar), BurntToast -> plyer -> stdlib. Sem win10toast (Py3.14). Nunca quebra o script."""
     try:
         def _enviar():
-            # 1) Windows: BurntToast primeiro (fica na Central no Win10/11, igual WhatsApp/navegador)
+            global _toast_slots, _toast_ptr, _toast_limpeza_feita
+            # 1) Windows: BurntToast 2 slots (fica na Central no Win10/11)
             if sys.platform.startswith("win"):
                 try:
-                    _uid = "Diamante Roxo"
+                    # Chave de duplicacao = frase sem o "HH:MM:SS - " inicial
+                    _msg_raw = str(mensagem)
+                    _chave = _msg_raw
+                    if len(_msg_raw) >= 11 and _msg_raw[2] == ":" and _msg_raw[5] == ":" and _msg_raw[8:11] == " - ":
+                        _chave = _msg_raw[11:]
+                    else:
+                        _chave = _msg_raw.split(" - ", 1)[-1]
                     t = str(titulo).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
                     m = str(mensagem).replace("\r", " ").replace("\n", " ").replace("'", "''").replace("$", "`$")
-                    bt = f"New-BurntToastNotification -Text '{t}','{m}'"
-                    # Limita a 1 na Central e expira em 5 min (sem acumular)
-                    bt += f" -UniqueIdentifier '{_uid}' -ExpirationTime (Get-Date).AddMinutes(5)"
-                    # Usa o logo do Diamante Roxo (limpo, sem fundo de papel)
-                    try:
-                        _logo = os.path.join(diretorio_base, "logo.png")
-                        if not os.path.exists(_logo):
-                            _logo = os.path.join(os.path.dirname(sys.executable), "DLLs", "py.ico")
-                        if os.path.exists(_logo):
-                            bt += f" -AppLogo '{_logo}'"
-                    except Exception:
-                        pass
                     with _notif_lock:
+                        # Limpeza unica do slot antigo de 1 ID
+                        if not _toast_limpeza_feita:
+                            try:
+                                subprocess.run(
+                                    ["pwsh", "-NoProfile", "-WindowStyle", "Hidden", "-Command", "try { Remove-BTNotification -Id 'Diamante Roxo' -ErrorAction SilentlyContinue } catch {}"],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                    timeout=10, check=False,
+                                    creationflags=subprocess.CREATE_NO_WINDOW,
+                                )
+                            except Exception:
+                                pass
+                            _toast_limpeza_feita = True
+                        # Escolha do slot: duplica -> reutiliza; vazio -> preenche; cheio -> substitui a mais antiga
+                        if _toast_slots[0] == _chave:
+                            _idx = 0
+                        elif _toast_slots[1] == _chave:
+                            _idx = 1
+                        elif _toast_slots[0] is None:
+                            _idx = 0
+                        elif _toast_slots[1] is None:
+                            _idx = 1
+                        else:
+                            _idx = _toast_ptr
+                            _toast_ptr = 1 - _toast_ptr
+                        _toast_slots[_idx] = _chave
+                        _uid = f"Diamante Roxo {_idx + 1}"
+                        bt = f"New-BurntToastNotification -Text '{t}','{m}'"
+                        # 2 slots na Central, expira em 5 min cada (sem acumular)
+                        bt += f" -UniqueIdentifier '{_uid}' -ExpirationTime (Get-Date).AddMinutes(5)"
+                        # Usa o logo do Diamante Roxo (limpo, sem fundo de papel)
+                        try:
+                            _logo = os.path.join(diretorio_base, "logo.png")
+                            if not os.path.exists(_logo):
+                                _logo = os.path.join(os.path.dirname(sys.executable), "DLLs", "py.ico")
+                            if os.path.exists(_logo):
+                                bt += f" -AppLogo '{_logo}'"
+                        except Exception:
+                            pass
                         r = subprocess.run(
                             ["pwsh", "-NoProfile", "-WindowStyle", "Hidden", "-Command", bt],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
