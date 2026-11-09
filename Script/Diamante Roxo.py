@@ -1244,8 +1244,6 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
     playback_state_atual = None
     ultimo_cursor = None
     contagem_parado = 0
-    parado_recente = False
-    ultimo_parado_ts = 0.0
     resultado_final = "normal"
 
     while True:
@@ -1259,10 +1257,6 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     playback_state_atual = status_obs.playback_state
                 elif hasattr(status_obs, 'playbackState'):
                     playback_state_atual = status_obs.playbackState
-                _estado_up = str(playback_state_atual or "").upper()
-                if "STOPPED" in _estado_up or "ENDED" in _estado_up or "ERROR" in _estado_up or "NONE" in _estado_up:
-                    parado_recente = True
-                    ultimo_parado_ts = time.time()
                 if cursor_atual is not None:
                     decorrido = cursor_atual / 1000.0
                     if ultimo_cursor is not None and cursor_atual == ultimo_cursor:
@@ -1280,43 +1274,20 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
 
                     if timeline_vlc_global >= 0:
                         salto_para_tras = timeline_vlc_global - cursor_atual
-                        # Filtro: reinício da fonte (estava parado) = re-sincroniza sem avançar.
-                        # Next no VLC (tocando, sem parado) = avança a SESSÃO. Rewind = re-sincroniza.
+                        # Avanço manual (skip) no VLC: reset para o início mesmo em filme recém iniciado,
+                        # ou salto grande para trás (rewind) como antes.
                         reset_inicio = cursor_atual <= 2000 and salto_para_tras > 300
                         salto_grande = salto_para_tras > 15000 and timeline_vlc_global > 5000
                         if reset_inicio or salto_grande:
                             prev_ms = timeline_vlc_global
                             timeline_vlc_global = cursor_atual
-                            _veio_de_parado = parado_recente and (time.time() - ultimo_parado_ts < 3.0)
-                            if _veio_de_parado:
-                                # OBS voltou pro primeiro vídeo (fonte mexida): como se tivesse começado do zero
-                                if is_midia:
-                                    midia_idx_global = 0
-                                    midia_decorrido_global = 0.0
-                                resultado_final = "reset_primeiro"
-                                log("[AVISO] VLC voltou para o primeiro vídeo. Reiniciando da SESSÃO 01 como se tivesse começado.", toast=True)
-                                parado_recente = False
-                                break
-                            if salto_grande and not reset_inicio:
-                                # Rewind dentro do mesmo filme: re-sincroniza, nao avanca
-                                if is_midia:
-                                    midia_decorrido_global = 0.0
-                                    decorrido_total = 0.0
-                                    inicio = time.time()
-                                log(f"[AVISO] VLC deu um salto para trás. Re-sincronizando a SESSÃO {indice_filme + 1:02d} sem avançar.", toast=True)
-                                parado_recente = False
-                                continue
-                            # Tocando + voltou pro 0 = skip manual real -> avanca
                             if is_midia: midia_decorrido_global = 0.0
                             resultado_final = "skip_detectado"
-                            log(f"Skip manual - SESSAO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}", toast=True)
-                            parado_recente = False
+                            log(f"Avanço manual detectado - SESSÃO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}")
                             break
 
                     timeline_vlc_global = cursor_atual
                 else:
-                    parado_recente = True
-                    ultimo_parado_ts = time.time()
                     decorrido = decorrido_total + (agora - inicio)
             except Exception:
                 # Conexão com o OBS caiu durante o filme: pausar, salvar posição e tentar reconectar
@@ -1749,14 +1720,6 @@ def aba_midias():
             rotear_pulo()
             return
 
-        if resultado == "reset_primeiro":
-            print()
-            log(f"Reinício geral. Voltando para a SESSÃO 01 do 0.")
-            midia_idx_global = 0
-            midia_decorrido_global = 0.0
-            timeline_vlc_global = -1
-            continue
-
         # === INTERCEPTAÇÃO DOS CENÁRIOS DE TRANSIÇÃO LIMPA ===
         if resultado == "pausa_quantidade":
             print()
@@ -1776,10 +1739,10 @@ def aba_midias():
             aba_pausa()
             return
         
-        # === Skip manual detectado. Avança o índice e segue para o próximo filme (PAUSE é independente: só por quantidade/manual). ===
+        # === Avanço manual detectado. Avança o índice e segue para o próximo filme (PAUSE é independente: só por quantidade/manual). ===
         if resultado == "skip_detectado":
             print()
-            log("Skip manual detectado durante a reprodução. Pulando para a próxima mídia.", toast=True)
+            log("Avanço manual detectado durante a reprodução. Pulando para a próxima mídia.", toast=True)
 
             # Reseta as memórias de tempo para o próximo filme começar do zero absoluto
             midia_decorrido_global = 0.0
@@ -1808,7 +1771,7 @@ def aba_midias():
             else:
                 visibilidade_fonte(cena, "SESSÃO ID", False)
                 print()
-                log("Filmes finalizados via skip. Escondendo o ID da sessão.")
+                log("Filmes finalizados por avanço manual. Escondendo o ID da sessão.")
 
             continue  # Volta ao topo do loop para o próximo filme
 
