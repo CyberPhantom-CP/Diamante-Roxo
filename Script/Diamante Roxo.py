@@ -28,7 +28,7 @@
 
 # 1) Importação de Módulos e Configuração Inicial.
 
-print("Carregando módulos...")
+print("Carregando o Sistema...")
 
 # === Biblioteca Padrão ===
 import atexit
@@ -99,6 +99,15 @@ def log(msg):
                 _log_handle.flush()
         except Exception as e:
             print(f"{time.strftime('%H:%M:%S')} - Erro ao gravar no log da sessão: {e}", flush=True)
+
+    # Espelha a linha do terminal/txt no toast (todo log, exceto contagem que não passa aqui).
+    # A contagem usa print direto (\r), então não entra aqui automaticamente.
+    try:
+        _notifica = globals().get("notificacao")
+        if _notifica is not None:
+            _notifica("Diamante Roxo", f"{horario} - {msg}")
+    except Exception:
+        pass
 
 def _fmt_hms(segundos):
     try:
@@ -600,7 +609,6 @@ class GrampeadoOBS(EventClient):
         fontes_novas = self._obter_fontes_cena(nova_cena)
 
         log(f"Transição de cena detectada: '{prev_cena}' -> '{nova_cena}'")
-        notificacao("Diamante Roxo", f"Cena: {prev_cena} -> {nova_cena}")
         if _cena_pendente_log == nova_cena:
             log(f"Cena trocada para: {nova_cena}")
             _cena_pendente_log = None
@@ -1033,7 +1041,6 @@ def start_sistema():
                 raise
         print()
         log("Gravação sendo iniciada!")
-        notificacao("Diamante Roxo", "Gravação iniciada!")
     elif global_modo_sistema == "live":
         try:
             client.start_stream()
@@ -1044,7 +1051,6 @@ def start_sistema():
                 raise
         print()
         log("Transmissão sendo iniciada!")
-        notificacao("Diamante Roxo", "Transmissão iniciada!")
     else:
         print()
         log(f"[ERRO] modo_sistema invalido: {global_modo_sistema!r}. "
@@ -1243,7 +1249,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                             timeline_vlc_global = cursor_atual
                             if is_midia: midia_decorrido_global = 0.0
                             resultado_final = "skip_detectado"
-                            notificacao("Diamante Roxo", f"Skip manual - SESSÃO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}")
+                            log(f"Skip manual - SESSÃO {indice_filme + 1:02d} | {_fmt_hms(prev_ms / 1000)} -> {_fmt_hms(cursor_atual / 1000)}")
                             break 
                         
                     timeline_vlc_global = cursor_atual
@@ -1301,7 +1307,6 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                     censura["ativo_agora"] = deve_ativar
                     if deve_ativar:
                         log(f"Censura ativada - SESSÃO {indice_filme + 1:02d} | {censura['fonte']} | {_fmt_hms(decorrido)}")
-                        notificacao("Diamante Roxo", f"Censura ativada - SESSÃO {indice_filme + 1:02d} | {censura['fonte']}")
 
         if is_midia and lista_saltos:
             for salto in lista_saltos:
@@ -1310,8 +1315,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                         ms_destino = int(salto["destino"] * 1000)
                         client.set_media_input_cursor(nome_fonte, ms_destino)
                         print()
-                        log(f"Pós-crédito detectado! Saltando para: {salto['destino']}s")
-                        notificacao("Diamante Roxo", f"Pós-créditos - SESSÃO {indice_filme + 1:02d} | -> {_fmt_hms(salto['destino'])}")
+                        log(f"Pós-crédito detectado! SESSÃO {indice_filme + 1:02d} | Saltando para: {_fmt_hms(salto['destino'])}")
                         
                         diferenca_salto = salto["destino"] - salto["gatilho"]
                         inicio -= diferenca_salto 
@@ -1718,7 +1722,6 @@ def aba_midias():
             if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
                 print()
                 log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
-                notificacao("Diamante Roxo", f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
                 visibilidade_fonte(cena, "SESSÃO ID", False)
                 midia_idx_global = 0
                 midia_decorrido_global = 0.0
@@ -1744,7 +1747,6 @@ def aba_midias():
         if global_encerrar_apos_filmes > 0 and midia_idx_global == global_encerrar_apos_filmes:
             print()
             log(f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
-            notificacao("Diamante Roxo", f"Encerramento programado atingido ({global_encerrar_apos_filmes} filmes). Indo para RAID/FINAL...")
             visibilidade_fonte(cena, "SESSÃO ID", False)
             # Zera contadores pra não retomar errado no RAID
             midia_idx_global = 0
@@ -1836,10 +1838,8 @@ def aba_pausa(modo="oraculo"):
     print()
     if modo == "quantidade":
         log("Pausa por quantidade ativada. Aguardando horário de retorno...")
-        notificacao("Diamante Roxo", "Pausa por quantidade ativada.")
     else:
         log("Pausa Noturna ativada. Aguardando até o horário permitido...")
-        notificacao("Diamante Roxo", "Pausa Noturna ativada (Oráculo).")
 
     chave_retorno = "pausa_retorno" if modo == "quantidade" else "oraculo_retorno"
     global_pausa_modo_atual = modo
@@ -2136,12 +2136,10 @@ def stop_sistema():
             client.stop_record()
             print()
             log("Gravação encerrada!")
-            notificacao("Diamante Roxo", "Gravação encerrada!")
         elif global_modo_sistema == "live":
             client.stop_stream()
             print()
             log("Transmissão encerrada!")
-            notificacao("Diamante Roxo", "Transmissão encerrada!")
         else:
             print()
             log(f"[ERRO] modo_sistema invalido: {global_modo_sistema!r} ao parar. "
@@ -2309,7 +2307,6 @@ def _ao_parar():
     _travar_painel_seguranca()
 
     log("[SISTEMA] Diamante Roxo encerrado. Todas as conexoes foram limpas.")
-    notificacao("Diamante Roxo", "Sistema encerrado.")
 
 atexit.register(_ao_parar)
 
