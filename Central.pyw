@@ -414,11 +414,11 @@ class CentralApp:
         if os.path.exists(ps1_path) and os.path.exists(pwsh_path):
             try:
                 subprocess.Popen(
-                    [pwsh_path, "-NoProfile", "-File", ps1_path],
+                    [pwsh_path, "-NoProfile", "-WindowStyle", "Hidden", "-File", ps1_path],
                     cwd=PASTA_PADRAO,
-                    creationflags=subprocess.CREATE_NEW_CONSOLE,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
                 )
-                self._status("Script iniciado via .ps1 (PWS7, nova janela).", COR_OK)
+                self._status("Script iniciado via .ps1 (PWS7, invisível como o .bat).", COR_OK)
             except Exception as e:
                 self._status(f"Falha ao iniciar .ps1: {e}", COR_ERRO)
             return
