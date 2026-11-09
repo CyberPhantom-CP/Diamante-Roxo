@@ -80,6 +80,7 @@ except Exception:
     _log_handle = None
 _log_lock = threading.Lock()
 _contagem_ativa = False
+_cena_pendente_log = None
 
 def log(msg):
     global _contagem_ativa
@@ -590,7 +591,7 @@ class GrampeadoOBS(EventClient):
         return resultado
 
     def on_current_program_scene_changed(self, data):
-        global global_modo_conteudo, client
+        global global_modo_conteudo, client, _cena_pendente_log
         nova_cena = data.scene_name
         prev_cena = self.cena_atual
 
@@ -600,6 +601,9 @@ class GrampeadoOBS(EventClient):
 
         log(f"Transição de cena detectada: '{prev_cena}' -> '{nova_cena}'")
         notificacao("Diamante Roxo", f"Cena: {prev_cena} -> {nova_cena}")
+        if _cena_pendente_log == nova_cena:
+            log(f"Cena trocada para: {nova_cena}")
+            _cena_pendente_log = None
 
         # Atualiza cena atual apenas após detectar/registrar a transição
         self.cena_atual = nova_cena
@@ -995,6 +999,11 @@ def esperar(tempo_str, cena_esperada, nome_fonte="FILMES", is_midia=False, durac
     # dando tempo da thread do OBS logar "Transição de cena" antes do "Aguardando".
     _inicio_contagem = time.time()
     time.sleep(0.5)
+    global _cena_pendente_log
+    _pendente = _cena_pendente_log
+    if _pendente is not None:
+        log(f"Cena trocada para: {_pendente}")
+        _cena_pendente_log = None
     print()
     log(f"Aguardando {tempo_str}...")
     return esperar_com_deteccao(total_segundos, cena_esperada, nome_fonte, is_midia, duracao_proximo_seg, lista_saltos, lista_censuras, indice_filme, _inicio_contagem)
@@ -1060,9 +1069,16 @@ def resetar_fluxo():
 # === Controle de Cenas/Fontes ===
 
 def trocar_cena(nome):
+    global _cena_pendente_log
     client.set_current_program_scene(nome)
-    print()
-    log(f"Cena trocada para: {nome}")
+    # Loga "Cena trocada" só depois da "Transição" (handler do OBS), com fallback
+    _cena_pendente_log = nome
+    def _flush_cena():
+        global _cena_pendente_log
+        if _cena_pendente_log == nome:
+            log(f"Cena trocada para: {nome}")
+            _cena_pendente_log = None
+    threading.Timer(1.5, _flush_cena).start()
 
 def cena_ativa_obs():
     return client.get_current_program_scene().current_program_scene_name
