@@ -991,9 +991,13 @@ def esperar(tempo_str, cena_esperada, nome_fonte="FILMES", is_midia=False, durac
         print()
         log(f"[ERRO] Tempo invalido no tempo_duracao.txt: {tempo_str!r}. Esperado HH:MM:SS ou HH:MM:SS:MS. Pulando este filme.")
         return None
+    # Conta o tempo desde a troca de cena (o timer ja correu durante a transição),
+    # dando tempo da thread do OBS logar "Transição de cena" antes do "Aguardando".
+    _inicio_contagem = time.time()
+    time.sleep(0.5)
     print()
     log(f"Aguardando {tempo_str}...")
-    return esperar_com_deteccao(total_segundos, cena_esperada, nome_fonte, is_midia, duracao_proximo_seg, lista_saltos, lista_censuras, indice_filme)
+    return esperar_com_deteccao(total_segundos, cena_esperada, nome_fonte, is_midia, duracao_proximo_seg, lista_saltos, lista_censuras, indice_filme, _inicio_contagem)
 
 def start_sistema():
     global client, sistema_em_andamento, global_modo_sistema, global_modo_conteudo
@@ -1169,12 +1173,12 @@ def carregar_censuras_do_filme(indice_filme):
         
     return lista_censuras
 
-def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0):
+def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=False, duracao_proximo_seg=0, lista_saltos=None, lista_censuras=None, indice_filme=0, inicio_externo=None):
     global _reconectando_obs, _contagem_ativa
     global midia_idx_global, midia_decorrido_global, timeline_vlc_global, global_oraculo_ativado, global_pausa_apos_filmes
     global global_duracao_entrada, global_duracao_inicio, global_duracao_raid, global_duracao_final, ultima_modificacao_tempos
     decorrido_total = midia_decorrido_global if is_midia else 0.0
-    inicio = time.time()
+    inicio = inicio_externo if inicio_externo is not None else time.time()
     inicio_linha = time.strftime("%H:%M")  # Fixo: horário em que esta seção começou
     
     if is_midia:
