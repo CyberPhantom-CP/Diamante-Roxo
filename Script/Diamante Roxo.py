@@ -1289,12 +1289,12 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                             timeline_vlc_global = cursor_atual
                             _veio_de_parado = parado_recente and (time.time() - ultimo_parado_ts < 3.0)
                             if _veio_de_parado:
-                                # OBS voltou pro primeiro video (fonte mexida): como se tivesse comecado do zero
+                                # OBS voltou pro primeiro vídeo (fonte mexida): como se tivesse começado do zero
                                 if is_midia:
                                     midia_idx_global = 0
                                     midia_decorrido_global = 0.0
                                 resultado_final = "reset_primeiro"
-                                log("[AVISO] VLC voltou para o primeiro video. Reiniciando da SESSAO 01 como se tivesse comecado.", toast=True)
+                                log("[AVISO] VLC voltou para o primeiro vídeo. Reiniciando da SESSÃO 01 como se tivesse começado.", toast=True)
                                 parado_recente = False
                                 break
                             if salto_grande and not reset_inicio:
@@ -1303,7 +1303,7 @@ def esperar_com_deteccao(segundos, cena_esperada, nome_fonte=None, is_midia=Fals
                                     midia_decorrido_global = 0.0
                                     decorrido_total = 0.0
                                     inicio = time.time()
-                                log(f"[AVISO] VLC deu um salto para tras. Re-sincronizando a SESSAO {indice_filme + 1:02d} sem avancar.", toast=True)
+                                log(f"[AVISO] VLC deu um salto para trás. Re-sincronizando a SESSÃO {indice_filme + 1:02d} sem avançar.", toast=True)
                                 parado_recente = False
                                 continue
                             # Tocando + voltou pro 0 = skip manual real -> avanca
@@ -1751,7 +1751,7 @@ def aba_midias():
 
         if resultado == "reset_primeiro":
             print()
-            log(f"Reinicio geral. Voltando para a SESSAO 01 do 0.")
+            log(f"Reinício geral. Voltando para a SESSÃO 01 do 0.")
             midia_idx_global = 0
             midia_decorrido_global = 0.0
             timeline_vlc_global = -1
