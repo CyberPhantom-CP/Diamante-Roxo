@@ -615,8 +615,8 @@ class GrampeadoOBS(EventClient):
 
         self.fontes_por_cena = {
             "INÍCIO": ["MÚSICAS"],
-            "MÍDIAS": ["SPOTIFY"],
-            "PAUSA": ["SPOTIFY", "MÚSICAS"]
+            "MÍDIAS": ["FUNDO_MUSICAL"],
+            "PAUSA": ["FUNDO_MUSICAL", "MÚSICAS"]
         }
         
         self.resgate_em_andamento = False
@@ -1618,7 +1618,7 @@ def aba_midias():
     visibilidade_fonte(cena, "WEBCAM", False)
     visibilidade_fonte(cena, "STREAMER ON", False)
     visibilidade_fonte(cena, "RERUN", False)
-    visibilidade_fonte(cena, "SPOTIFY", False)
+    visibilidade_fonte(cena, "FUNDO_MUSICAL", False)
     visibilidade_fonte(cena, "MÚSICAS", False)
     visibilidade_fonte(cena, "CENSURA", False)
     visibilidade_fonte(cena, "TARJA", False)
@@ -2054,7 +2054,7 @@ def aba_rerun():
 
     # == Ligando Fontes para o Rerun ==
     visibilidade_fonte(cena, "RERUN", True)
-    visibilidade_fonte(cena, "SPOTIFY", True)
+    visibilidade_fonte(cena, "FUNDO_MUSICAL", True)
     visibilidade_fonte(cena, "MÚSICAS", True)
     visibilidade_fonte(cena, "STREAMER OFF", True)
 

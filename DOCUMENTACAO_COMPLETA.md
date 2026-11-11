@@ -184,7 +184,7 @@ O oráculo gera `pausa_oraculo` (barrou o próximo filme no minuto 1) ou `pausa_
 | GIF | WEBCAM |
 | STREAMER OFF | STREAMER ON |
 | FILMES | RERUN |
-| SESSÃO ID | SPOTIFY |
+| SESSÃO ID | FUNDO_MUSICAL |
 |  | CENSURA |
 |  | TARJA |
 |  | [SITE] |
@@ -194,7 +194,7 @@ O oráculo gera `pausa_oraculo` (barrou o próximo filme no minuto 1) ou `pausa_
 
 Controlado por `modo_conteudo = rerun` no painel.
 
-- Apenas fontes RERUN, SPOTIFY e STREAMER OFF ficam visíveis. [SITE] e [ANOTACOES] são desligadas.
+- Apenas fontes RERUN, FUNDO_MUSICAL e STREAMER OFF ficam visíveis. [SITE] e [ANOTACOES] são desligadas.
 - Exibe contagem regressiva ao vivo até o horário configurado em `rerun_horario_final`.
 - Detecta alterações em tempo real nos parâmetros do painel (dias, horário).
 - Ao finalizar, redireciona conforme `saida_rerun`:
@@ -213,7 +213,7 @@ Controlado por `modo_conteudo = estudo` no painel.
   - `iniciar_midias` (agendado separadamente) dispara a transição:
     1. Garante que a cena MÍDIAS está ativa.
     2. Desliga [SITE] e [ANOTACOES].
-    3. Liga FILMES + GIF + SESSÃO ID (ou RERUN + SPOTIFY).
+    3. Liga FILMES + GIF + SESSÃO ID (ou RERUN + FUNDO_MUSICAL).
     4. Inicia o loop normal de filmes/rerun.
 - Em dias sem estudo, basta mudar para `modo_conteudo = filmes` ou `rerun` — `iniciar_midias` é ignorado, `start_sistema` funciona normalmente.
 
@@ -242,8 +242,8 @@ Quando um alerta é detectado:
 | Cena | Fontes que sofrem ducking |
 |---|---|
 | INÍCIO | MÚSICAS |
-| MÍDIAS | SPOTIFY |
-| PAUSA | SPOTIFY |
+| MÍDIAS | FUNDO_MUSICAL |
+| PAUSA | FUNDO_MUSICAL, MÚSICAS |
 
 A fonte `[FONTE_ALERTA]` (definida em `fontes_alertas`) é automaticamente excluída do ducking mesmo se listada em `fontes_por_cena`.
 
@@ -718,6 +718,7 @@ Com a remoção do relay:
 
 | Versão | Data | Mudanças |
 |---|---|---|
+| 6.1 | 11/11/2026 | **Fonte SPOTIFY renomeada para FUNDO_MUSICAL:** a captura WASAPI passou a capturar o áudio do MPC-BE (em vez do Spotify), com monitoramento ativado. Referências no script (`fontes_por_cena`, `aba_midias()`, `aba_rerun()`), na documentação e no `KS.json` do OBS atualizadas (backup `.before-FUNDO_MUSICAL` no KS.json). |
 | 5.1 | 01/10/2026 | **Kickerino (cliente de chat da Kick):** novo app gerenciado, exclusivo da plataforma Kick (simétrico ao Chatty, que é exclusivo do Twitch). `start_kickerino()` + agendamento `kickerino` no painel sob o gate `plataforma == kick` + minimização de janela. `localizar_software()` agora aceita wildcard em qualquer trecho do path (necessário porque a pasta do app carrega a versão no nome, ex.: `Kickerino_1.43_Windows`, então um path fixo quebraria a cada atualização). Correção de bug em `fontes_por_cena["PAUSA"]`, que estava como `["SPOTIFY, MÚSICAS"]` (uma string com vírgula) e portanto nunca aplicava ducking — agora é `["SPOTIFY", "MÚSICAS"]`. `aba_midias()` desliga MÚSICAS e `aba_rerun()` liga MÚSICAS. |
 | 5.2 | 02/10/2026 | **Cabeçalho no `tempo_duracao.txt`:** `arquivo_tempo()` agora ignora linhas de comentário (`#`/`=`), igual aos outros leitores; `gerar_tempo.py` com `separar_arquivo_tempos()` e `resetar_censura()` por sessão. |
 | 6.0 | 07/11/2026 | **MS, PAUSE independente e limpeza:** tempos aceitam `HH:MM:SS:MS` (duração, gatilhos, censura), `intervalo_detecao = 0.5`, Kickerino removido por completo (código, painel, Central e docs), PAUSE independente (skip manual não dispara PAUSE; PAUSE só por quantidade/manual), prioridade interna com watchdog de 60s e `retornar_midias` só para PAUSE manual, leitura de retorno via globals, log com arquivo aberto e trava, contagem regressiva zerando em `00:00:00` (detalhada só em MÍDIAS, simples nas demais, ENTRADA incluída), `Rodando/Pausado` pelo `playback_state` real, Central com `retornar_midias` na aba Pausa, loop principal e pausa a 1s, revisão PT-BR de comentários/logs e README v6.0. |

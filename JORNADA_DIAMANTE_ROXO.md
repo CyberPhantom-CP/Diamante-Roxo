@@ -32,7 +32,7 @@ Sistema dinâmico: cada filme pode ter regras de censura por timestamp, com múl
 
 ## RERUN
 
-Modo retransmissão ao vivo com contagem regressiva, fontes dedicadas (RERUN + SPOTIFY), suporte a dias e horário final configurável.
+Modo retransmissão ao vivo com contagem regressiva, fontes dedicadas (RERUN + FUNDO_MUSICAL), suporte a dias e horário final configurável.
 
 ## Localização Dinâmica de Software
 
