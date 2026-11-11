@@ -1011,6 +1011,9 @@ def conectar_obs():
                                     port=global_obs_port,
                                     password=global_obs_password)
 
+        # A cada conexão, aplica o perfil conforme a plataforma e a coleção K.S
+        restaurar_cena_perfil_obs()
+
         return True
 
     except Exception as e:
@@ -2396,20 +2399,29 @@ def _sinal_parar(_s, _f):
 signal.signal(signal.SIGINT, _sinal_parar)
 
 def restaurar_cena_perfil_obs():
-    """Se reconectado e o OBS mudou de perfil/coleção, volta ao padrão KICK/K.S."""
+    """A cada (re)conexão: aplica o perfil conforme a plataforma do painel
+    (twitch -> TW, kick -> KICK) e a coleção K.S (nome exibido no OBS;
+    o arquivo em disco é o KS.json - o OBS remove pontos do nome ao salvar)."""
+    perfil = "TW" if global_plataforma == "twitch" else "KICK"
+    ok_perfil = False
+    ok_colecao = False
     try:
-        # Sempre aplica — se já estiver certo, o OBS ignora; se mudou, corrige
-        try:
-            client.set_current_profile("KICK")
-        except Exception:
-            pass
-        try:
-            client.set_current_scene_collection("K.S")
-        except Exception:
-            pass
-        log("[PERFIL/CENA] Perfil KICK e coleção K.S restaurados.")
+        client.set_current_profile(perfil)
+        ok_perfil = True
     except Exception as e:
-        log(f"[AVISO] Falha ao restaurar o perfil/cena do OBS: {e}.")
+        print()
+        log(f"[AVISO] Falha ao aplicar o perfil '{perfil}': {e}.")
+    try:
+        client.set_current_scene_collection("K.S")
+        ok_colecao = True
+    except Exception as e:
+        print()
+        log(f"[AVISO] Falha ao aplicar a coleção 'K.S': {e}.")
+    if ok_perfil and ok_colecao:
+        log(f"[PERFIL/CENA] Perfil '{perfil}' (plataforma {global_plataforma}) e coleção K.S aplicados.")
+    else:
+        log(f"[PERFIL/CENA] Restauração parcial - perfil {'OK' if ok_perfil else 'FALHOU'}, "
+            f"coleção {'OK' if ok_colecao else 'FALHOU'}.")
 
 
 # == Loop Principal ==
@@ -2432,7 +2444,7 @@ while not encerrar_sistema:
                     conectado = conectar_obs()
                     if conectado:
                         log("[RECONEXÃO] Reconectado ao OBS com sucesso.")
-                        restaurar_cena_perfil_obs()
+                        # restaurar_cena_perfil_obs() já é chamado dentro de conectar_obs()
                         # Se havia filme em andamento, tenta restaurar a posição
                         if midia_decorrido_global > 0 and sistema_em_andamento:
                             try:

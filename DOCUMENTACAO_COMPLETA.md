@@ -96,6 +96,8 @@ Durante todo o ciclo, o **GrampeadoOBS** (EventClient) escuta eventos do OBS em 
 - **on_input_volume_meters:** monitora volume do [FONTE_ALERTA] para detectar alertas.
 - **on_input_mute_state_changed:** trata mutar/desmutar do mixer.
 
+A cada conexão ao OBS (`conectar_obs()` — no início, na reconexão automática e no agendamento `conectar_obs`), o script também aplica o **perfil** conforme a `plataforma` do painel: `twitch` \u2192 perfil `TW`, `kick` \u2192 perfil `KICK` — e a coleção **`K.S`** (nome exibido no OBS; o arquivo em disco é `KS.json`, pois o OBS remove os pontos do nome ao salvar). É o mesmo padrão da alternância de apps por plataforma, agora valendo para o perfil em toda (re)conexão — inclusive antes de `start_stream()`.
+
 ---
 
 ## 3. Fluxo de Execução
@@ -720,6 +722,7 @@ Com a remoção do relay:
 
 | Versão | Data | Mudanças |
 |---|---|---|
+| 6.3 | 11/11/2026 | **Perfil do OBS automático pela plataforma:** `conectar_obs()` agora chama `restaurar_cena_perfil_obs()` a cada conexão (início, `conectar_obs` agendado, modo estudo e reconexão). A função aplica o perfil `TW` (plataforma=twitch) ou `KICK` (kick) e a coleção `K.S` (o OBS remove pontos do nome em disco: `KS.json`). A chamada duplicada na reconexão foi removida. Falhas de perfil/coleção passam a logar avisos distintos (antes, `except: pass` engolia silenciosamente e o log afirmava sucesso incondicionalmente). Perfil `TW` criado no OBS no mesmo dia (duplicata de `TW - F.S`). |
 | 6.2 | 11/11/2026 | **Áudio dinâmico na PAUSA:** `aba_pausa()` garante na entrada `FUNDO_MUSICAL` ligada / `MÚSICAS` desligada. `GrampeadoOBS.on_input_volume_meters()` marca (monotonic) o instante do último sinal do FUNDO_MUSICAL (pico > ~-50 dB). Sem sinal por 10 s, a MÚSICAS assume (FUNDO desligada); sinal de volta, o FUNDO reassume (MÚSICAS desligada). Timestamp compartilhado via `global_fundo_musical_ultimo_sinal`. Tolerância de 10 s a partir da entrada para não disparar a reserva à toa. |
 | 6.1 | 11/11/2026 | **Fonte SPOTIFY renomeada para FUNDO_MUSICAL:** a captura WASAPI passou a capturar o áudio do MPC-BE (em vez do Spotify), com monitoramento ativado. Referências no script (`fontes_por_cena`, `aba_midias()`, `aba_rerun()`), na documentação e no `KS.json` do OBS atualizadas (backup `.before-FUNDO_MUSICAL` no KS.json). |
 | 5.1 | 01/10/2026 | **Kickerino (cliente de chat da Kick):** novo app gerenciado, exclusivo da plataforma Kick (simétrico ao Chatty, que é exclusivo do Twitch). `start_kickerino()` + agendamento `kickerino` no painel sob o gate `plataforma == kick` + minimização de janela. `localizar_software()` agora aceita wildcard em qualquer trecho do path (necessário porque a pasta do app carrega a versão no nome, ex.: `Kickerino_1.43_Windows`, então um path fixo quebraria a cada atualização). Correção de bug em `fontes_por_cena["PAUSA"]`, que estava como `["SPOTIFY, MÚSICAS"]` (uma string com vírgula) e portanto nunca aplicava ducking — agora é `["SPOTIFY", "MÚSICAS"]`. `aba_midias()` desliga MÚSICAS e `aba_rerun()` liga MÚSICAS. |
