@@ -177,6 +177,8 @@ São dois retornos independentes, configurados separadamente no painel:
 
 O oráculo gera `pausa_oraculo` (barrou o próximo filme no minuto 1) ou `pausa_horario` (já passou das 23h na reta final). A pausa por quantidade gera `pausa_quantidade`. Cada um tem seu próprio horário de retorno e sua própria função de retomada (`oraculo_retorno` / `pausa_retorno`), eliminando a antiga confusão entre os dois fluxos. O skip manual **não** dispara PAUSE automaticamente — vai direto ao próximo filme (PAUSE independente).
 
+**Áudio dinâmico da PAUSA:** na entrada da cena, o script força `FUNDO_MUSICAL` ligada e `MÚSICAS` desligada. Os medidores de volume (`InputVolumeMeters`) marcam o último instante em que o `FUNDO_MUSICAL` teve sinal no mixer (pico > ~-50 dB). Sem sinal por **10 s**, a `MÚSICAS` assume como reserva (`FUNDO_MUSICAL` desligada, `MÚSICAS` ligada); quando o sinal volta, a `FUNDO_MUSICAL` reassume sozinha (`MÚSICAS` desligada). O estado não depende mais do que o OBS salvou por último, e a alternância fica toda dentro do loop de `aba_pausa()` (checagem a cada 1 s, junto da checagem de cena).
+
 **Controle de visibilidade das fontes na cena MÍDIAS:**
 
 | Ligadas | Desligadas |
@@ -718,6 +720,7 @@ Com a remoção do relay:
 
 | Versão | Data | Mudanças |
 |---|---|---|
+| 6.2 | 11/11/2026 | **Áudio dinâmico na PAUSA:** `aba_pausa()` garante na entrada `FUNDO_MUSICAL` ligada / `MÚSICAS` desligada. `GrampeadoOBS.on_input_volume_meters()` marca (monotonic) o instante do último sinal do FUNDO_MUSICAL (pico > ~-50 dB). Sem sinal por 10 s, a MÚSICAS assume (FUNDO desligada); sinal de volta, o FUNDO reassume (MÚSICAS desligada). Timestamp compartilhado via `global_fundo_musical_ultimo_sinal`. Tolerância de 10 s a partir da entrada para não disparar a reserva à toa. |
 | 6.1 | 11/11/2026 | **Fonte SPOTIFY renomeada para FUNDO_MUSICAL:** a captura WASAPI passou a capturar o áudio do MPC-BE (em vez do Spotify), com monitoramento ativado. Referências no script (`fontes_por_cena`, `aba_midias()`, `aba_rerun()`), na documentação e no `KS.json` do OBS atualizadas (backup `.before-FUNDO_MUSICAL` no KS.json). |
 | 5.1 | 01/10/2026 | **Kickerino (cliente de chat da Kick):** novo app gerenciado, exclusivo da plataforma Kick (simétrico ao Chatty, que é exclusivo do Twitch). `start_kickerino()` + agendamento `kickerino` no painel sob o gate `plataforma == kick` + minimização de janela. `localizar_software()` agora aceita wildcard em qualquer trecho do path (necessário porque a pasta do app carrega a versão no nome, ex.: `Kickerino_1.43_Windows`, então um path fixo quebraria a cada atualização). Correção de bug em `fontes_por_cena["PAUSA"]`, que estava como `["SPOTIFY, MÚSICAS"]` (uma string com vírgula) e portanto nunca aplicava ducking — agora é `["SPOTIFY", "MÚSICAS"]`. `aba_midias()` desliga MÚSICAS e `aba_rerun()` liga MÚSICAS. |
 | 5.2 | 02/10/2026 | **Cabeçalho no `tempo_duracao.txt`:** `arquivo_tempo()` agora ignora linhas de comentário (`#`/`=`), igual aos outros leitores; `gerar_tempo.py` com `separar_arquivo_tempos()` e `resetar_censura()` por sessão. |

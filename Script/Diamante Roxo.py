@@ -322,6 +322,10 @@ global_obs_password = ""
 global_modo_sistema = "live"
 global_plataforma = "twitch"
 
+# PAUSA: instante (monotonic) do último sinal do FUNDO_MUSICAL no mixer.
+# Atualizado em GrampeadoOBS.on_input_volume_meters(); lido no loop de aba_pausa().
+global_fundo_musical_ultimo_sinal = 0.0
+
 # === Modos do Sistema ===
 global_modo_conteudo = "filmes"
 global_modo_destino = "filmes"
@@ -703,12 +707,18 @@ class GrampeadoOBS(EventClient):
         if not hasattr(data, "inputs"): 
             return
 
-        global client
+        global client, global_fundo_musical_ultimo_sinal
         if not client:
             return
 
         try:
             for input_data in data.inputs:
+                # PAUSA: marca o último instante com sinal do FUNDO_MUSICAL no mixer.
+                if hasattr(input_data, 'input_name') and input_data.input_name == "FUNDO_MUSICAL":
+                    if hasattr(input_data, "input_levels_mul") and input_data.input_levels_mul:
+                        pico = max(canal[1] for canal in input_data.input_levels_mul)
+                        if pico > 0.00316:  # ~ -50 dB, mesmo critério dos alertas
+                            global_fundo_musical_ultimo_sinal = time.monotonic()
                 if hasattr(input_data, 'input_name') and input_data.input_name in self.fontes_alertas:
                     if hasattr(input_data, "input_levels_mul") and input_data.input_levels_mul:
                         vol_multiplier = max(canal[1] for canal in input_data.input_levels_mul)
@@ -1868,10 +1878,21 @@ def skip_videos(nome_fonte="FILMES"):
 
 def aba_pausa(modo="oraculo"):
     global midia_decorrido_global, ultima_mod_pausa, global_pausa_modo_atual, global_pausa_retorno, global_oraculo_retorno
+    global global_fundo_musical_ultimo_sinal
     client.trigger_media_input_action("FILMES", "OBS_WEBSOCKET_MEDIA_INPUT_ACTION_PAUSE")
     cena = "PAUSA"
     trocar_cena(cena)
     print()
+    # == Áudio da PAUSA: FUNDO_MUSICAL enquanto houver sinal; sem sinal por 10 s,
+    #    a MÚSICAS assume. O sinal de voltar devolve o controle ao FUNDO_MUSICAL. ==
+    FONTE_FUNDO = "FUNDO_MUSICAL"
+    FONTE_RESERVA = "MÚSICAS"
+    SILENCIO_MAX_SEG = 10.0
+    usando_reserva = False
+    global_fundo_musical_ultimo_sinal = time.monotonic()  # tolerância de 10 s a partir da entrada
+    visibilidade_fonte(cena, FONTE_FUNDO, True)
+    visibilidade_fonte(cena, FONTE_RESERVA, False)
+    log("PAUSA: áudio dinâmico ativo - 'FUNDO_MUSICAL' com sinal; sem sinal por 10 s, 'MÚSICAS' assume.")
     if modo == "quantidade":
         log("Pausa por quantidade ativada. Aguardando o horário de retorno.", toast=True)
     else:
@@ -1912,6 +1933,23 @@ def aba_pausa(modo="oraculo"):
         except Exception as e:
             print()
             log(f"Erro ao verificar a cena durante a PAUSA: {e}.")
+
+        # == Alternância FUNDO_MUSICAL / MÚSICAS conforme o sinal no mixer ==
+        sinal_fundo = time.monotonic() - global_fundo_musical_ultimo_sinal
+        if not usando_reserva:
+            if sinal_fundo >= SILENCIO_MAX_SEG:
+                visibilidade_fonte(cena, FONTE_FUNDO, False)
+                visibilidade_fonte(cena, FONTE_RESERVA, True)
+                usando_reserva = True
+                print()
+                log(f"PAUSA: {SILENCIO_MAX_SEG:.0f} s sem sinal no 'FUNDO_MUSICAL'. Desligando-o e ligando 'MÚSICAS'.")
+        else:
+            if sinal_fundo < SILENCIO_MAX_SEG:
+                visibilidade_fonte(cena, FONTE_FUNDO, True)
+                visibilidade_fonte(cena, FONTE_RESERVA, False)
+                usando_reserva = False
+                print()
+                log("PAUSA: sinal de volta no 'FUNDO_MUSICAL'. Desligando 'MÚSICAS' e ligando-o.")
 
         # == Recalcula se o painel foi atualizado (global mudou) ==
         try:
