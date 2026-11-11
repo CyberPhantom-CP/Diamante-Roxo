@@ -9,7 +9,7 @@
 #   - OBS Studio       Transmissão e gravação de áudio/vídeo
 #   - Streamer.bot     Automação de eventos, comandos e alertas
 #   - Mix It Up        Chat, comandos e interatividade
-#   - Chatty           Cliente de chat com moderação
+#   - Chatty           Cliente de chat com moderação (bundle portable em D:)
 # ====================================================================
 # Plataformas:
 #   - Twitch  Todos os apps (Mix It Up, Chatty, Streamer.bot, OBS)
@@ -370,9 +370,8 @@ def localizar_software(nome_exe):
             r"%LocalAppData%\MixItUp\MixItUp.exe",
             r"%AppData%\MixItUp\MixItUp.exe",
         ],
-        "Chatty.exe": [
-            r"%LocalAppData%\Chatty\Chatty.exe",
-            r"%AppData%\Chatty\Chatty.exe",
+        "ChattyPortable_2.exe": [
+            r"D:\Chatty_0.28_win_standalone\ChattyPortable_2.exe",
         ],
     }
     caminhos = mapa.get(nome_exe, [])
@@ -436,7 +435,7 @@ log("Localizando softwares...")
 app_obs64studio = localizar_software("obs64.exe")
 app_streamerbot = localizar_software("Streamer.bot.exe")
 app_mixitup = localizar_software("MixItUp.exe")
-app_chatty = localizar_software("Chatty.exe")
+app_chatty = localizar_software("ChattyPortable_2.exe")
 
 for nome, caminho in [("OBS Studio", app_obs64studio), ("Streamer.bot", app_streamerbot), ("Mix It Up", app_mixitup), ("Chatty", app_chatty)]:
     if caminho:
@@ -489,7 +488,7 @@ def start_obs64studio():
         log("[ERRO] OBS Studio não encontrado.")
 
 def start_chatty():
-    if verificar_app_start("Chatty.exe"):
+    if verificar_app_start("ChattyPortable_2.exe"):
         log("Chatty já está em execução. Pulando a inicialização.")
         return
     if app_chatty:

@@ -566,7 +566,7 @@ pip install schedule psutil pywinauto obsws_python
 | **OBS Studio** | `obs64.exe` | Transmissão, gravação, cenas, fontes |
 | **Streamer.bot** | `Streamer.bot.exe` | Eventos, comandos e alertas da live |
 | **Mix It Up** | `MixItUp.exe` | Chat, interatividade e comandos (Twitch) |
-| **Chatty** | `Chatty.exe` | Cliente de chat com moderação (Twitch) |
+| **Chatty** | `D:\Chatty_0.28_win_standalone\ChattyPortable_2.exe` (bundle portable, settings em `app\portable_settings`) | Cliente de chat com moderação (Twitch) |
 
 ### 11.4. Arquivos do Projeto (devem estar salvos)
 
@@ -722,6 +722,7 @@ Com a remoção do relay:
 
 | Versão | Data | Mudanças |
 |---|---|---|
+| 6.4 | 11/11/2026 | **Chatty: bundle portable no D:** `start_chatty()` passa a iniciar `D:\Chatty_0.28_win_standalone\ChattyPortable_2.exe` (atalho `portable_settings` dentro do bundle; nada mais no C:/AppData). Resolução via `localizar_software("ChattyPortable_2.exe")` com caminho fixo (o Chatty antigo do `C:\Program Files (x86)\Chatty\Chatty.exe` sai da resolução, sem fallback). Verificação de processo (`verificar_app_start`) atualizada para o novo nome — antes `Chatty.exe` não casaria com `ChattyPortable_2.exe` e o script reabriria o Chatty em duplicata. Header do script anotado. |
 | 6.3 | 11/11/2026 | **Perfil do OBS automático pela plataforma:** `conectar_obs()` agora chama `restaurar_cena_perfil_obs()` a cada conexão (início, `conectar_obs` agendado, modo estudo e reconexão). A função aplica o perfil `TW` (plataforma=twitch) ou `KICK` (kick) e a coleção `K.S` (o OBS remove pontos do nome em disco: `KS.json`). A chamada duplicada na reconexão foi removida. Falhas de perfil/coleção passam a logar avisos distintos (antes, `except: pass` engolia silenciosamente e o log afirmava sucesso incondicionalmente). Perfil `TW` criado no OBS no mesmo dia (duplicata de `TW - F.S`). |
 | 6.2 | 11/11/2026 | **Áudio dinâmico na PAUSA:** `aba_pausa()` garante na entrada `FUNDO_MUSICAL` ligada / `MÚSICAS` desligada. `GrampeadoOBS.on_input_volume_meters()` marca (monotonic) o instante do último sinal do FUNDO_MUSICAL (pico > ~-50 dB). Sem sinal por 10 s, a MÚSICAS assume (FUNDO desligada); sinal de volta, o FUNDO reassume (MÚSICAS desligada). Timestamp compartilhado via `global_fundo_musical_ultimo_sinal`. Tolerância de 10 s a partir da entrada para não disparar a reserva à toa. |
 | 6.1 | 11/11/2026 | **Fonte SPOTIFY renomeada para FUNDO_MUSICAL:** a captura WASAPI passou a capturar o áudio do MPC-BE (em vez do Spotify), com monitoramento ativado. Referências no script (`fontes_por_cena`, `aba_midias()`, `aba_rerun()`), na documentação e no `KS.json` do OBS atualizadas (backup `.before-FUNDO_MUSICAL` no KS.json). |
