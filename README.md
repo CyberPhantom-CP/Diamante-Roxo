@@ -21,8 +21,8 @@ Projeto pessoal de uso contínuo em lives reais. Configuração 100% por arquivo
 
 ## Plataformas
 
-- **Twitch** — todos os aplicativos (Mix It Up, Chatty, Streamer.bot, OBS)
-- **Kick** — Streamer.bot e OBS
+- **Twitch** - Chatty, Streamer.bot e OBS
+- **Kick** - Mix It Up, Streamer.bot e OBS
 
 ## Modos de operação
 

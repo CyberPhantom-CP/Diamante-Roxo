@@ -12,8 +12,8 @@
 #   - Chatty           Cliente de chat com moderação (bundle portable em D:)
 # ====================================================================
 # Plataformas:
-#   - Twitch  Todos os apps (Mix It Up, Chatty, Streamer.bot, OBS)
-#   - Kick    Streamer.bot e OBS
+#   - Twitch  Chatty, Streamer.bot e OBS
+#   - Kick    Mix It Up, Streamer.bot e OBS
 # Modos de operação:
 #   - FILMES  Reprodução de mídia com censura por tempo e saltos
 #   - RERUN   Retransmissão ao vivo com contagem regressiva
@@ -2316,9 +2316,10 @@ def verificar_agendamento():
         # CORREÇÃO: campo vazio no painel usava "00:00:00" como padrão e agendava
         # a ação pra meia-noite. Agora só agenda se o horário estiver preenchido
         # (mesma checagem que iniciar_midias já fazia, aplicada aqui também).
-        if global_plataforma in ("twitch",):
+        if global_plataforma in ("kick",):
             if config.get("mixitup", ""):
                 schedule.every().day.at(config.get("mixitup")).do(start_mixitup)
+        if global_plataforma in ("twitch",):
             if config.get("chatty", ""):
                 schedule.every().day.at(config.get("chatty")).do(start_chatty)
         if config.get("streamerbot", ""):

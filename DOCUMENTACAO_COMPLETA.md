@@ -34,8 +34,8 @@ O sistema opera em três modos principais:
 - **ESTUDO:** Fluxo híbrido — transmissão manual com estudo, transição automática para FILMES/RERUN via `iniciar_midias`.
 
 Suporta duas plataformas:
-- **Twitch:** todos os apps são iniciados (Mix It Up, Chatty, Streamer.bot, OBS).
-- **Kick:** Streamer.bot e OBS são iniciados.
+- **Twitch:** Chatty, Streamer.bot e OBS são iniciados.
+- **Kick:** Mix It Up, Streamer.bot e OBS são iniciados.
 
 A configuração é feita inteiramente pelo arquivo `Painel_de_Controle.txt`, permitindo que o sistema rode sozinho sem intervenção manual durante a live.
 
@@ -115,8 +115,8 @@ O arquivo `Painel_de_Controle.txt` define horários para cada ação:
 
 | Chave | O que faz | Plataforma |
 |---|---|---|---|
-| `plataforma` | `twitch` (todos) ou `kick` (só OBS + Streamer.bot) | - |
-| `mixitup` | Inicia Mix It Up | Só Twitch |
+| `plataforma` | `twitch` (Chatty) ou `kick` (Mix It Up) | - |
+| `mixitup` | Inicia Mix It Up | Só Kick |
 | `streamerbot` | Inicia Streamer.bot | Ambas |
 | `obs64studio` | Inicia OBS Studio | Ambas |
 | `chatty` | Inicia Chatty | Só Twitch |
@@ -324,7 +324,7 @@ Localizado na pasta `TWITCH` (pai da pasta `Script`).
 ```
 executar_sistema      = yes              # Trava de segurança
 modo_sistema          = live / gravar    # Modo de transmissão
-plataforma            = twitch / kick    # Twitch (todos apps) ou Kick (só OBS + Streamer.bot)
+plataforma            = twitch / kick    # Twitch (Chatty) ou Kick (Mix It Up)
 modo_conteudo         = filmes / rerun / estudo   # Modo de operação
 modo_destino          = filmes / rerun            # Destino do disparo iniciar_midias (quando modo=estudo)
 modo_raid             = final / rerun    # Destino após RAID
@@ -565,7 +565,7 @@ pip install schedule psutil pywinauto obsws_python
 |---|---|---|
 | **OBS Studio** | `obs64.exe` | Transmissão, gravação, cenas, fontes |
 | **Streamer.bot** | `Streamer.bot.exe` | Eventos, comandos e alertas da live |
-| **Mix It Up** | `MixItUp.exe` | Chat, interatividade e comandos (Twitch) |
+| **Mix It Up** | `MixItUp.exe` | Chat, interatividade e comandos (Kick) |
 | **Chatty** | `D:\Chatty_0.28_win_standalone\ChattyPortable_2.exe` (bundle portable, settings em `app\portable_settings`) | Cliente de chat com moderação (Twitch) |
 
 ### 11.4. Arquivos do Projeto (devem estar salvos)
@@ -722,6 +722,7 @@ Com a remoção do relay:
 
 | Versão | Data | Mudanças |
 |---|---|---|
+| 6.5 | 12/11/2026 | **Inversão de plataforma no Mix It Up:** `mixitup` passa a ser agendado somente com `plataforma = kick` (antes, só com `twitch`); o Chatty continua exclusivo do Twitch. O minimizar_janelas permanece independente da plataforma. Cabeçalho do script, seção de plataformas e tabela de apps atualizados. |
 | 6.4 | 11/11/2026 | **Chatty: bundle portable no D:** `start_chatty()` passa a iniciar `D:\Chatty_0.28_win_standalone\ChattyPortable_2.exe` (atalho `portable_settings` dentro do bundle; nada mais no C:/AppData). Resolução via `localizar_software("ChattyPortable_2.exe")` com caminho fixo (o Chatty antigo do `C:\Program Files (x86)\Chatty\Chatty.exe` sai da resolução, sem fallback). Verificação de processo (`verificar_app_start`) atualizada para o novo nome — antes `Chatty.exe` não casaria com `ChattyPortable_2.exe` e o script reabriria o Chatty em duplicata. Header do script anotado. |
 | 6.3 | 11/11/2026 | **Perfil do OBS automático pela plataforma:** `conectar_obs()` agora chama `restaurar_cena_perfil_obs()` a cada conexão (início, `conectar_obs` agendado, modo estudo e reconexão). A função aplica o perfil `TW` (plataforma=twitch) ou `KICK` (kick) e a coleção `K.S` (o OBS remove pontos do nome em disco: `KS.json`). A chamada duplicada na reconexão foi removida. Falhas de perfil/coleção passam a logar avisos distintos (antes, `except: pass` engolia silenciosamente e o log afirmava sucesso incondicionalmente). Perfil `TW` criado no OBS no mesmo dia (duplicata de `TW - F.S`). |
 | 6.2 | 11/11/2026 | **Áudio dinâmico na PAUSA:** `aba_pausa()` garante na entrada `FUNDO_MUSICAL` ligada / `MÚSICAS` desligada. `GrampeadoOBS.on_input_volume_meters()` marca (monotonic) o instante do último sinal do FUNDO_MUSICAL (pico > ~-50 dB). Sem sinal por 10 s, a MÚSICAS assume (FUNDO desligada); sinal de volta, o FUNDO reassume (MÚSICAS desligada). Timestamp compartilhado via `global_fundo_musical_ultimo_sinal`. Tolerância de 10 s a partir da entrada para não disparar a reserva à toa. |
