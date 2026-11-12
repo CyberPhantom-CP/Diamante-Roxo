@@ -24,6 +24,8 @@ Projeto pessoal de uso contínuo em lives reais. Configuração 100% por arquivo
 - **Twitch** - Chatty, Streamer.bot e OBS
 - **Kick** - Mix It Up, Streamer.bot e OBS
 
+Os aplicativos (Mix It Up, Chatty, Streamer.bot) **não** abrem sozinhos durante gravação/transmissão — abra-os manualmente. O OBS é exceção (ele é quem grava/transmite). Fora de live, tudo abre normalmente pelos agendamentos.
+
 ## Modos de operação
 
 - **FILMES** — reprodução de mídia com censura por tempo e saltos

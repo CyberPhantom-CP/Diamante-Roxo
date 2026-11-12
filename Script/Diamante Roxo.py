@@ -454,7 +454,32 @@ def verificar_app_start(nome_processo):
             pass
     return False
 
+def obs_em_gravacao_ou_live():
+    """True se o OBS está gravando ou transmitindo agora.
+
+    Combina a consulta ao OBS via WebSocket (cobre gravação/transmissão
+    iniciada manualmente) com a flag interna `sistema_em_andamento`
+    (o que o próprio script iniciou). Em caso de dúvida — OBS fechado
+    ou erro na consulta — retorna False (o app abre normalmente).
+    """
+    if sistema_em_andamento:
+        return True
+    try:
+        if client is None:
+            return False
+        rec = client.get_record_status()
+        if getattr(rec, "output_active", False):
+            return True
+        st = client.get_stream_status()
+        return bool(getattr(st, "output_active", False))
+    except Exception:
+        return False
+
 def start_mixitup():
+    if obs_em_gravacao_ou_live():
+        print()
+        log("Mix It Up não iniciado: gravação/transmissão em andamento. Abra manualmente.")
+        return
     if verificar_app_start("MixItUp.exe"):
         log("Mix It Up já está em execução. Pulando a inicialização.")
         return
@@ -466,6 +491,10 @@ def start_mixitup():
         log("[ERRO] Mix It Up não encontrado.")
 
 def start_streamerbot():
+    if obs_em_gravacao_ou_live():
+        print()
+        log("Streamer.bot não iniciado: gravação/transmissão em andamento. Abra manualmente.")
+        return
     if verificar_app_start("Streamer.bot.exe"):
         log("Streamer.bot já está em execução. Pulando a inicialização.")
         return
@@ -488,6 +517,10 @@ def start_obs64studio():
         log("[ERRO] OBS Studio não encontrado.")
 
 def start_chatty():
+    if obs_em_gravacao_ou_live():
+        print()
+        log("Chatty não iniciado: gravação/transmissão em andamento. Abra manualmente.")
+        return
     if verificar_app_start("ChattyPortable_2.exe"):
         log("Chatty já está em execução. Pulando a inicialização.")
         return

@@ -116,10 +116,10 @@ O arquivo `Painel_de_Controle.txt` define horários para cada ação:
 | Chave | O que faz | Plataforma |
 |---|---|---|---|
 | `plataforma` | `twitch` (Chatty) ou `kick` (Mix It Up) | - |
-| `mixitup` | Inicia Mix It Up | Só Kick |
-| `streamerbot` | Inicia Streamer.bot | Ambas |
+| `mixitup` | Inicia Mix It Up (não abre durante gravação/transmissão — veja nota) | Só Kick |
+| `streamerbot` | Inicia Streamer.bot (não abre durante gravação/transmissão — veja nota) | Ambas |
 | `obs64studio` | Inicia OBS Studio | Ambas |
-| `chatty` | Inicia Chatty | Só Twitch |
+| `chatty` | Inicia Chatty (não abre durante gravação/transmissão — veja nota) | Só Twitch |
 | `minimizar_janelas` | Minimiza todos os apps | - |
 | `conectar_obs` | Conecta ao OBS WebSocket | - |
 | `start_sistema` | Inicia transmissão/gravação | - |
@@ -131,6 +131,8 @@ O arquivo `Painel_de_Controle.txt` define horários para cada ação:
 | `oraculo_retorno` | Horário de retorno da pausa noturna | - |
 
 O scheduler verifica o arquivo a cada 1 segundo. Se houver alteração, recarrega tudo.
+
+**Nota — apps não abrem durante a live:** `start_mixitup()`, `start_streamerbot()` e `start_chatty()` consultam `obs_em_gravacao_ou_live()` antes de abrir o aplicativo. Ela retorna `True` se o OBS estiver gravando/transmitindo (consulta ao OBS via WebSocket: `get_record_status`/`get_stream_status`) **ou** se a flag interna `sistema_em_andamento` estiver ativa (gravação/transmissão iniciada pelo próprio script). Enquanto estiver `True`, o app **não** é aberto e o log registra `Mix It Up não iniciado: gravação/transmissão em andamento. Abra manualmente.` — o OBS fica de fora dessa regra (é ele quem grava/transmite, e a verificação de processo já evita duplicata). Não há toast de aviso. Se o OBS estiver fechado ou a consulta falhar, o app abre normalmente (comportamento de antes). `minimizar_janelas` não é afetado.
 
 > **Nota:** desde a v5.0, os campos de horário em branco no painel **não são agendados** (antes um campo vazio virava `00:00:00` e agendava a ação para a meia-noite). Um horário só é agendado se o campo estiver preenchido.
 
@@ -722,6 +724,7 @@ Com a remoção do relay:
 
 | Versão | Data | Mudanças |
 |---|---|---|
+| 6.6 | 12/11/2026 | **Apps não abrem durante gravação/transmissão:** nova `obs_em_gravacao_ou_live()` — retorna True se o OBS estiver gravando/transmitindo (WebSocket: `get_record_status`/`get_stream_status`) ou se `sistema_em_andamento` estiver ativo. `start_mixitup()`, `start_streamerbot()` e `start_chatty()` passam a consultar a função antes de abrir; em live, pulam a inicialização e logam aviso (sem toast) para abertura manual. OBS fora da regra (é quem grava/transmite). OBS fechado/consulta falha → abre normalmente (comportamento anterior). `minimizar_janelas` e `start_obs64studio()` não são afetados. |
 | 6.5 | 12/11/2026 | **Inversão de plataforma no Mix It Up:** `mixitup` passa a ser agendado somente com `plataforma = kick` (antes, só com `twitch`); o Chatty continua exclusivo do Twitch. O minimizar_janelas permanece independente da plataforma. Cabeçalho do script, seção de plataformas e tabela de apps atualizados. |
 | 6.4 | 11/11/2026 | **Chatty: bundle portable no D:** `start_chatty()` passa a iniciar `D:\Chatty_0.28_win_standalone\ChattyPortable_2.exe` (atalho `portable_settings` dentro do bundle; nada mais no C:/AppData). Resolução via `localizar_software("ChattyPortable_2.exe")` com caminho fixo (o Chatty antigo do `C:\Program Files (x86)\Chatty\Chatty.exe` sai da resolução, sem fallback). Verificação de processo (`verificar_app_start`) atualizada para o novo nome — antes `Chatty.exe` não casaria com `ChattyPortable_2.exe` e o script reabriria o Chatty em duplicata. Header do script anotado. |
 | 6.3 | 11/11/2026 | **Perfil do OBS automático pela plataforma:** `conectar_obs()` agora chama `restaurar_cena_perfil_obs()` a cada conexão (início, `conectar_obs` agendado, modo estudo e reconexão). A função aplica o perfil `TW` (plataforma=twitch) ou `KICK` (kick) e a coleção `K.S` (o OBS remove pontos do nome em disco: `KS.json`). A chamada duplicada na reconexão foi removida. Falhas de perfil/coleção passam a logar avisos distintos (antes, `except: pass` engolia silenciosamente e o log afirmava sucesso incondicionalmente). Perfil `TW` criado no OBS no mesmo dia (duplicata de `TW - F.S`). |
