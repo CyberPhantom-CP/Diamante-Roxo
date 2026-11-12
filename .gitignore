@@ -4,6 +4,10 @@
 # Config com dados de execução (mantém o padrão limpo no repo)
 Painel_de_Controle.txt
 
+# Dados de sessão regenerados a cada uso (durações e censuras dos filmes)
+tempo_duracao.txt
+controle_censura.txt
+
 # Arquivos temporários do Windows
 Thumbs.db
 desktop.ini

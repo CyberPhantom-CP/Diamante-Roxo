@@ -583,6 +583,8 @@ pip install schedule psutil pywinauto obsws_python
 
 > **Template x preenchido:** `Utilitarios/gerar_tempo.py` e `Utilitarios/Gerar_Censuras.py` versionados neste repositório são **templates** (`PASTA_PRINCIPAL`/`PASTA_SCRIPT_PRINCIPAL = r"SEU_CAMINHO_DO_DIAMANTE_ROXO_AQUI"`). As cópias preenchidas com o caminho real ficam fora do repositório (na pasta de trabalho, ex.: `Códigos\Utilitarios\`), para uso local. **Nunca commite a versão preenchida.**
 
+> **Fora do versionamento:** `tempo_duracao.txt` e `controle_censura.txt` são mantidos só na pasta local (gitignored), assim como `Painel_de_Controle.txt` — são dados de sessão regenerados a cada uso.
+
 ### 11.5. Arquivos Gerados em Execução
 
 | Arquivo | Pasta | Conteúdo |
@@ -726,6 +728,7 @@ Com a remoção do relay:
 
 | Versão | Data | Mudanças |
 |---|---|---|
+| 6.8 | 12/11/2026 | **Arquivos de sessão fora do versionamento:** `tempo_duracao.txt` e `controle_censura.txt` removidos do índice do git (mantidos localmente) e adicionados ao `.gitignore` — são dados regenerados a cada sessão. `.gitignore` unificado entre a pasta de trabalho e o repositório (incluindo a seção local de manutenção já existente só no repo). |
 | 6.7 | 12/11/2026 | **Limpeza de arquivos redundantes:** removida a cópia exata de `Central.pyw` em `Utilitarios/` (byte a byte idêntica à Central da raiz, versionada por engano) e o stub local com caminho absoluto. README atualizado com a árvore real do projeto (Central na raiz). Documentada a diferença entre os templates versionados (`PASTA_* = SEU_CAMINHO_DO_DIAMANTE_ROXO_AQUI`) e as cópias preenchidas de `gerar_tempo.py`/`Gerar_Censuras.py` (mantidas fora do repositório, nunca commitadas). |
 | 6.6 | 12/11/2026 | **Apps não abrem durante gravação/transmissão:** nova `obs_em_gravacao_ou_live()` — retorna True se o OBS estiver gravando/transmitindo (WebSocket: `get_record_status`/`get_stream_status`) ou se `sistema_em_andamento` estiver ativo. `start_mixitup()`, `start_streamerbot()` e `start_chatty()` passam a consultar a função antes de abrir; em live, pulam a inicialização e logam aviso (sem toast) para abertura manual. OBS fora da regra (é quem grava/transmite). OBS fechado/consulta falha → abre normalmente (comportamento anterior). `minimizar_janelas` e `start_obs64studio()` não são afetados. |
 | 6.5 | 12/11/2026 | **Inversão de plataforma no Mix It Up:** `mixitup` passa a ser agendado somente com `plataforma = kick` (antes, só com `twitch`); o Chatty continua exclusivo do Twitch. O minimizar_janelas permanece independente da plataforma. Cabeçalho do script, seção de plataformas e tabela de apps atualizados. |

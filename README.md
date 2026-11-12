@@ -73,7 +73,7 @@ Diamante-Roxo\
 └── .gitignore
 ```
 
-> **Na pasta de trabalho (Códigos):** usa-se `Painel_de_Controle.txt` (cópia ativa do `.example`), que não é versionado.
+> **Na pasta de trabalho (Códigos):** usa-se `Painel_de_Controle.txt` (cópia ativa do `.example`), que não é versionado. Da mesma forma, `tempo_duracao.txt` e `controle_censura.txt` não são versionados (dados de sessão regenerados a cada uso).
 
 ## Como rodar
 
