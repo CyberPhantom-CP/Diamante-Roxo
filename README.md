@@ -58,10 +58,10 @@ Os aplicativos (Mix It Up, Chatty, Streamer.bot) **não** abrem sozinhos durante
 ```
 Diamante-Roxo\
 ├── README.md                        → este arquivo
+├── Central.pyw                      → painel de controle da live (interface gráfica)
 ├── Script\
 │   └── Diamante Roxo.py             → script principal
 ├── Utilitarios\
-│   ├── Central.pyw                  → painel de controle da live (interface gráfica)
 │   ├── gerar_tempo.py               → extrai durações dos vídeos (gera tempo_duracao.txt)
 │   └── Gerar_Censuras.py            → captura cenas a censurar (gera controle_censura.txt)
 ├── DOCUMENTACAO_COMPLETA.md         → documentação técnica detalhada
@@ -92,6 +92,8 @@ Os dois utilitários preenchem os arquivos de texto da raiz do projeto:
 |---|---|---|
 | `Utilitarios/gerar_tempo.py` | `tempo_duracao.txt` | Extrai a duração dos vídeos com `ffprobe` (**requer FFmpeg no PATH**). Escreve o cabeçalho comentado no padrão do `controle_censura.txt` e **preserva** os comentários que você adicionar. Na opção "2" (dia novo), também reseta `controle_censura.txt` com uma linha `False | ` por sessão. |
 | `Utilitarios/Gerar_Censuras.py` | `controle_censura.txt` | Captura as cenas a censurar. Requer `keyboard` e a Interface Web do **MPC-BE** na porta 13579 (Ver opções → Player → Interface Web). |
+
+> **Template x preenchido:** os dois arquivos versionados acima são **templates** — trazem `PASTA_PRINCIPAL`/`PASTA_SCRIPT_PRINCIPAL = r"SEU_CAMINHO_DO_DIAMANTE_ROXO_AQUI"`. Para rodar, copie-os para fora do repositório (ex.: sua pasta de trabalho) e preencha com o caminho real do projeto. **Nunca commite a versão preenchida.**
 
 Ambos usam caminho hardcoded: preencha a constante `PASTA_*` no topo antes de executar.
 
